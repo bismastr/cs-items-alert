@@ -33,7 +33,7 @@ func NewDbClient() (*Db, error) {
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create connection pool: %v", err)
+		return nil, fmt.Errorf("error creating db %v", err)
 	}
 
 	return &Db{
