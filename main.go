@@ -1,12 +1,18 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
+	"github.com/bismastr/cs-price-alert/db"
+	"github.com/bismastr/cs-price-alert/items"
+	"github.com/bismastr/cs-price-alert/repository"
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/extensions"
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -14,9 +20,18 @@ var (
 )
 
 func main() {
+	godotenv.Load()
+	db, err := db.NewDbClient()
+	if err != nil {
+		log.Fatalf("Error creating DB client: %v", err)
+	}
+
+	repo := repository.New(db.Pool)
+	ctx := context.Background()
+
 	c := defaultCollector(1 * time.Second)
 
-	var result SteamSearchResponse
+	var result items.SteamSearchResponse
 	c.OnResponse(func(r *colly.Response) {
 		err := json.Unmarshal(r.Body, &result)
 		if err != nil {
@@ -24,13 +39,19 @@ func main() {
 		}
 
 		for _, item := range result.Results {
-			fmt.Println(item.HashName)
-			fmt.Println(item.SellPrice)
-			fmt.Println(item.SellListings)
+			err := repo.InsertItem(ctx, repository.InsertItem{
+				Name:         item.Name,
+				HashName:     item.HashName,
+				SellPrice:    item.SellPrice,
+				SellListings: item.SellListings,
+			})
+			if err != nil {
+				panic(err)
+			}
 		}
 	})
 
-	for start := 100; start <= 100; start += 1 {
+	for start := 100; start <= 400; start += 100 {
 		url := fmt.Sprintf("%s&start=%d", baseUrl, start)
 		c.Visit(url)
 	}
