@@ -25,7 +25,6 @@ func main() {
 	ctx := context.Background()
 	crn := cron.New()
 
-	//Db
 	db, err := db.NewDbClient()
 	if err != nil {
 		log.Fatalf("Error creating DB client: %v", err)
