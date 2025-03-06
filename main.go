@@ -13,6 +13,7 @@ import (
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/extensions"
 	"github.com/joho/godotenv"
+	"github.com/robfig/cron/v3"
 )
 
 var (
@@ -21,13 +22,31 @@ var (
 
 func main() {
 	godotenv.Load()
+	ctx := context.Background()
+	crn := cron.New()
+
+	//Db
 	db, err := db.NewDbClient()
 	if err != nil {
 		log.Fatalf("Error creating DB client: %v", err)
 	}
 
+	_, err = crn.AddFunc("@hourly", func() {
+		scrapper(db, ctx)
+	})
+	if err != nil {
+		log.Fatalln("cannot run cron")
+	}
+
+	crn.Start()
+	log.Println("Cron scheduler started")
+
+	select {}
+}
+
+func scrapper(db *db.Db, ctx context.Context) {
 	repo := repository.New(db.Pool)
-	ctx := context.Background()
+	log.Println("Starting scrape job...")
 
 	c := defaultCollector(1 * time.Second)
 
@@ -35,7 +54,8 @@ func main() {
 	c.OnResponse(func(r *colly.Response) {
 		err := json.Unmarshal(r.Body, &result)
 		if err != nil {
-			panic(err)
+			log.Printf("Error unmarshalling response: %v", err)
+			return
 		}
 
 		for _, item := range result.Results {
@@ -46,7 +66,8 @@ func main() {
 				SellListings: item.SellListings,
 			})
 			if err != nil {
-				panic(err)
+				log.Printf("Error inserting item: %v", err)
+				continue
 			}
 		}
 	})
@@ -55,6 +76,7 @@ func main() {
 		url := fmt.Sprintf("%s&start=%d", baseUrl, start)
 		c.Visit(url)
 	}
+
 }
 
 func defaultCollector(delay time.Duration) *colly.Collector {
