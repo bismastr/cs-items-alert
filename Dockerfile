@@ -8,6 +8,6 @@ COPY . .
 RUN go build -v -o /scrape-cs-items 
 
 FROM debian:bookworm
-
+RUN apt-get update && apt-get install -y ca-certificates
 COPY --from=builder /scrape-cs-items /usr/local/bin
 CMD ["scrape-cs-items"]
