@@ -9,6 +9,8 @@ import (
 
 	"github.com/bismastr/cs-price-alert/db"
 	"github.com/bismastr/cs-price-alert/items"
+	messaaging "github.com/bismastr/cs-price-alert/messaging"
+	"github.com/bismastr/cs-price-alert/price"
 	"github.com/bismastr/cs-price-alert/repository"
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/extensions"
@@ -30,8 +32,17 @@ func main() {
 		log.Fatalf("Error creating DB client: %v", err)
 	}
 
+	messaaging.NewPublisher()
+	repo := repository.New(db.Pool)
+	publisher, err := messaaging.NewPublisher()
+	if err != nil {
+		log.Fatalf("Error creating DB client: %v", err)
+	}
+
+	priceService := price.NewPriceService(repo, publisher)
+
 	_, err = crn.AddFunc("@hourly", func() {
-		scrapper(db, ctx)
+		scrapper(ctx, priceService)
 	})
 	if err != nil {
 		log.Fatalln("cannot run cron")
@@ -43,8 +54,8 @@ func main() {
 	select {}
 }
 
-func scrapper(db *db.Db, ctx context.Context) {
-	repo := repository.New(db.Pool)
+func scrapper(ctx context.Context, priceService *price.PriceService) {
+
 	log.Println("Starting scrape job...")
 
 	c := defaultCollector(1 * time.Second)
@@ -58,15 +69,17 @@ func scrapper(db *db.Db, ctx context.Context) {
 		}
 
 		for _, item := range result.Results {
-			err := repo.InsertItem(ctx, repository.InsertItem{
+			insertItem := repository.InsertItem{
 				Name:         item.Name,
 				HashName:     item.HashName,
 				SellPrice:    item.SellPrice,
 				SellListings: item.SellListings,
-			})
+			}
+
+			err := priceService.InsertItem(ctx, insertItem)
 			if err != nil {
-				log.Printf("Error inserting item: %v", err)
-				continue
+				log.Printf("Error unmarshalling response: %v", err)
+				return
 			}
 		}
 	})

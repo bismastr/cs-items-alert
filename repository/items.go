@@ -22,9 +22,15 @@ WITH inserted_item AS (
 )
 INSERT INTO prices (item_id, sell_price, sell_listings)
 SELECT id, $3, $4 FROM inserted_item
+RETURNING item_id
 `
 
-func (q *Queries) InsertItem(ctx context.Context, item InsertItem) error {
-	_, err := q.db.Exec(ctx, insertItem, item.Name, item.HashName, item.SellPrice, item.SellListings)
-	return err
+func (q *Queries) InsertItem(ctx context.Context, item InsertItem) (int, error) {
+	var id int
+	err := q.db.QueryRow(ctx, insertItem, item.Name, item.HashName, item.SellPrice, item.SellListings).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }
