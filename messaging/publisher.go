@@ -7,12 +7,12 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-type Publisher struct {
+type RmqClient struct {
 	conn *amqp091.Connection
 	ch   *amqp091.Channel
 }
 
-func NewPublisher() (*Publisher, error) {
+func NewRmqClient() (*RmqClient, error) {
 	username := os.Getenv("RMQ_USERNAME")
 	password := os.Getenv("RMQ_PASSWORD")
 	host := os.Getenv("RMQ_HOST")
@@ -39,7 +39,7 @@ func NewPublisher() (*Publisher, error) {
 	_, err = ch.QueueDeclare(
 		"price_updates",
 		true,
-		true,
+		false,
 		false,
 		false,
 		nil,
@@ -48,13 +48,13 @@ func NewPublisher() (*Publisher, error) {
 		return nil, err
 	}
 
-	return &Publisher{
+	return &RmqClient{
 		conn: conn,
 		ch:   ch,
 	}, nil
 }
 
-func (p *Publisher) Close() {
+func (p *RmqClient) Close() {
 	p.ch.Close()
 	p.conn.Close()
 }

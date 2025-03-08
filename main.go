@@ -32,9 +32,9 @@ func main() {
 		log.Fatalf("Error creating DB client: %v", err)
 	}
 
-	messaaging.NewPublisher()
+	messaaging.NewRmqClient()
 	repo := repository.New(db.Pool)
-	publisher, err := messaaging.NewPublisher()
+	publisher, err := messaaging.NewRmqClient()
 	if err != nil {
 		log.Fatalf("Error creating DB client: %v", err)
 	}
