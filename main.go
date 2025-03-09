@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/bismastr/cs-price-alert/db"
-	"github.com/bismastr/cs-price-alert/items"
 	messaaging "github.com/bismastr/cs-price-alert/messaging"
 	"github.com/bismastr/cs-price-alert/price"
 	"github.com/bismastr/cs-price-alert/repository"
+	"github.com/bismastr/cs-price-alert/steam"
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/extensions"
 	"github.com/joho/godotenv"
@@ -32,17 +32,16 @@ func main() {
 		log.Fatalf("Error creating DB client: %v", err)
 	}
 
-	messaaging.NewRmqClient()
 	repo := repository.New(db.Pool)
-	publisher, err := messaaging.NewRmqClient()
+	publisher, err := messaaging.NewPublihser()
 	if err != nil {
 		log.Fatalf("Error creating DB client: %v", err)
 	}
 
 	priceService := price.NewPriceService(repo, publisher)
-
+	scrapper(ctx, priceService)
 	_, err = crn.AddFunc("@hourly", func() {
-		scrapper(ctx, priceService)
+
 	})
 	if err != nil {
 		log.Fatalln("cannot run cron")
@@ -60,7 +59,7 @@ func scrapper(ctx context.Context, priceService *price.PriceService) {
 
 	c := defaultCollector(1 * time.Second)
 
-	var result items.SteamSearchResponse
+	var result steam.SteamSearchResponse
 	c.OnResponse(func(r *colly.Response) {
 		err := json.Unmarshal(r.Body, &result)
 		if err != nil {

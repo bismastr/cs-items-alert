@@ -1,4 +1,4 @@
-package items
+package steam
 
 type SteamSearchResponse struct {
 	Success    bool       `json:"success"`

@@ -1,4 +1,4 @@
-package messaaging
+package messaging
 
 import (
 	"fmt"
@@ -7,12 +7,12 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-type RmqClient struct {
+type Publisher struct {
 	conn *amqp091.Connection
 	ch   *amqp091.Channel
 }
 
-func NewRmqClient() (*RmqClient, error) {
+func NewPublihser() (*Publisher, error) {
 	username := os.Getenv("RMQ_USERNAME")
 	password := os.Getenv("RMQ_PASSWORD")
 	host := os.Getenv("RMQ_HOST")
@@ -48,13 +48,28 @@ func NewRmqClient() (*RmqClient, error) {
 		return nil, err
 	}
 
-	return &RmqClient{
+	return &Publisher{
 		conn: conn,
 		ch:   ch,
 	}, nil
 }
 
-func (p *RmqClient) Close() {
+func (p *Publisher) PublishPriceUpdate(itemId int) error {
+	body := fmt.Sprintf(`{"item_id": %d}`, itemId)
+
+	return p.ch.Publish(
+		"",
+		"price_updates",
+		false,
+		false,
+		amqp091.Publishing{
+			ContentType: "application/json",
+			Body:        []byte(body),
+		},
+	)
+}
+
+func (p *Publisher) Close() {
 	p.ch.Close()
 	p.conn.Close()
 }

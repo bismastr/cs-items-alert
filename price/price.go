@@ -10,10 +10,10 @@ import (
 
 type PriceService struct {
 	repo      *repository.Queries
-	publisher *messaaging.RmqClient
+	publisher *messaaging.Publisher
 }
 
-func NewPriceService(repo *repository.Queries, publihser *messaaging.RmqClient) *PriceService {
+func NewPriceService(repo *repository.Queries, publihser *messaaging.Publisher) *PriceService {
 	return &PriceService{repo: repo, publisher: publihser}
 }
 
