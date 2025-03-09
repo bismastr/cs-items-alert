@@ -3,20 +3,24 @@ package analysis
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 
+	"github.com/bismastr/cs-price-alert/bot"
 	"github.com/bismastr/cs-price-alert/repository"
 	"github.com/rabbitmq/amqp091-go"
 )
 
 type Analysis struct {
 	repo *repository.Queries
+	bot  *bot.Bot
 }
 
-func NewAnalysisService(repo *repository.Queries) *Analysis {
+func NewAnalysisService(repo *repository.Queries, bot *bot.Bot) *Analysis {
 	return &Analysis{
 		repo: repo,
+		bot:  bot,
 	}
 }
 
@@ -37,7 +41,10 @@ func (a *Analysis) PriceAnalysis(ctx context.Context, d amqp091.Delivery) error 
 	}
 
 	CalculateVolatility(&priceHistory)
-	log.Printf("Item: %s%d, have a price changed %v percent from the last 5 hours", priceHistory.Name, priceHistory.ID, priceHistory.Volatility)
+
+	content := fmt.Sprintf("Item: %s%d, have a price changed %v percent from the last 5 hours", priceHistory.Name, priceHistory.ID, priceHistory.Volatility)
+	log.Println(content)
+	a.bot.SendMessageToChannel("1276782792876888075", content)
 
 	return nil
 }
