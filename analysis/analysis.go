@@ -8,43 +8,55 @@ import (
 	"math"
 
 	"github.com/bismastr/cs-price-alert/bot"
+	"github.com/bismastr/cs-price-alert/messaging"
 	"github.com/bismastr/cs-price-alert/repository"
-	"github.com/rabbitmq/amqp091-go"
 )
 
 type Analysis struct {
-	repo *repository.Queries
-	bot  *bot.Bot
+	repo     *repository.Queries
+	bot      *bot.Bot
+	consumer *messaging.Consumer
 }
 
-func NewAnalysisService(repo *repository.Queries, bot *bot.Bot) *Analysis {
+func NewAnalysisService(repo *repository.Queries, bot *bot.Bot, consumer *messaging.Consumer) *Analysis {
 	return &Analysis{
-		repo: repo,
-		bot:  bot,
+		repo:     repo,
+		bot:      bot,
+		consumer: consumer,
 	}
 }
 
-func (a *Analysis) PriceAnalysis(ctx context.Context, d amqp091.Delivery) error {
+func (a *Analysis) PriceAnalysis(ctx context.Context) error {
 	log.Println("Running Price analysis...")
+	msgs, close, err := a.consumer.PriceUpdateConsume("price_updates")
+	if err != nil {
+		return err
+	}
+
+	defer close()
+
 	var priceUpdate struct {
 		ItemId int `json:"item_id"`
 	}
-	if err := json.Unmarshal(d.Body, &priceUpdate); err != nil {
-		log.Printf("Error decoding message: %v", err)
-		return err
+
+	for d := range msgs {
+		if err := json.Unmarshal(d.Body, &priceUpdate); err != nil {
+			log.Printf("Error decoding message: %v", err)
+			return err
+		}
+
+		priceHistory, err := a.repo.GetItemPrice(ctx, priceUpdate.ItemId)
+		if err != nil {
+			log.Printf("Error getting item price history: %v", err)
+			return err
+		}
+
+		CalculateVolatility(&priceHistory)
+
+		content := fmt.Sprintf("Item: %s%d, have a price changed %v percent from the last 5 hours", priceHistory.Name, priceHistory.ID, priceHistory.Volatility)
+		log.Println(content)
+		a.bot.SendMessageToChannel("1276782792876888075", content)
 	}
-
-	priceHistory, err := a.repo.GetItemPrice(ctx, priceUpdate.ItemId)
-	if err != nil {
-		log.Printf("Error getting item price history: %v", err)
-		return err
-	}
-
-	CalculateVolatility(&priceHistory)
-
-	content := fmt.Sprintf("Item: %s%d, have a price changed %v percent from the last 5 hours", priceHistory.Name, priceHistory.ID, priceHistory.Volatility)
-	log.Println(content)
-	a.bot.SendMessageToChannel("1276782792876888075", content)
 
 	return nil
 }

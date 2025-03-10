@@ -2,6 +2,7 @@ package price
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	messaaging "github.com/bismastr/cs-price-alert/messaging"
@@ -23,7 +24,9 @@ func (s *PriceService) InsertItem(ctx context.Context, item repository.InsertIte
 		return err
 	}
 
-	err = s.publisher.PublishPriceUpdate(id)
+	message := fmt.Sprintf(`{"item_id": %d}`, id)
+
+	err = s.publisher.PublishPriceUpdate("price_updates", []byte(message))
 	if err != nil {
 		log.Printf("Failed to publish price update: %v", err)
 		return err

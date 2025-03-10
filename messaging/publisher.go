@@ -1,75 +1,47 @@
 package messaging
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/rabbitmq/amqp091-go"
 )
 
 type Publisher struct {
 	conn *amqp091.Connection
-	ch   *amqp091.Channel
 }
 
-func NewPublihser() (*Publisher, error) {
-	username := os.Getenv("RMQ_USERNAME")
-	password := os.Getenv("RMQ_PASSWORD")
-	host := os.Getenv("RMQ_HOST")
-	port := 5672
-
-	amqpURL := fmt.Sprintf(
-		"amqp://%s:%s@%s:%d/",
-		username,
-		password,
-		host,
-		port,
-	)
-
-	conn, err := amqp091.Dial(amqpURL)
-	if err != nil {
-		return nil, err
-	}
-
-	ch, err := conn.Channel()
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = ch.QueueDeclare(
-		"price_updates",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
+func NewPublihser(url string) (*Publisher, error) {
+	conn, err := amqp091.Dial(url)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Publisher{
 		conn: conn,
-		ch:   ch,
 	}, nil
 }
 
-func (p *Publisher) PublishPriceUpdate(itemId int) error {
-	body := fmt.Sprintf(`{"item_id": %d}`, itemId)
+func (p *Publisher) PublishPriceUpdate(q string, message []byte) error {
+	ch, err := p.conn.Channel()
+	if err != nil {
+		return err
+	}
 
-	return p.ch.Publish(
-		"",
-		"price_updates",
-		false,
-		false,
-		amqp091.Publishing{
-			ContentType: "application/json",
-			Body:        []byte(body),
-		},
-	)
+	defer ch.Close()
+
+	ch.QueueDeclare(q, true, false, false, false, nil)
+
+	payload := amqp091.Publishing{
+		ContentType: "application/json",
+		Body:        message,
+	}
+
+	err = ch.Publish("", q, false, false, payload)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *Publisher) Close() {
-	p.ch.Close()
 	p.conn.Close()
 }

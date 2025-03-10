@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/bismastr/cs-price-alert/analysis"
 	"github.com/bismastr/cs-price-alert/bot"
@@ -24,16 +25,13 @@ func main() {
 	bot := bot.NewBot()
 
 	repo := repository.New(db.Pool)
-	consumer, err := messaging.NewConsumer()
+	consumer, err := messaging.NewConsumer(os.Getenv("RMQ_URL"))
 	if err != nil {
 		log.Fatalf("Error creating DB client: %v", err)
 	}
 
-	analysisService := analysis.NewAnalysisService(repo, bot)
-	err = consumer.PriceUpdateConsume(ctx, analysisService.PriceAnalysis)
-	if err != nil {
-		log.Printf("Err Consuming %v", err)
-	}
+	analysisService := analysis.NewAnalysisService(repo, bot, consumer)
+	analysisService.PriceAnalysis(ctx)
 
 	select {}
 }

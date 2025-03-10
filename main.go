@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/bismastr/cs-price-alert/db"
@@ -33,7 +34,7 @@ func main() {
 	}
 
 	repo := repository.New(db.Pool)
-	publisher, err := messaaging.NewPublihser()
+	publisher, err := messaaging.NewPublihser(os.Getenv("RMQ_URL"))
 	if err != nil {
 		log.Fatalf("Error creating DB client: %v", err)
 	}
