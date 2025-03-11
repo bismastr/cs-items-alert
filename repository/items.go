@@ -16,13 +16,11 @@ type InsertItem struct {
 
 const insertItem = `
 WITH inserted_item AS (
-    INSERT INTO items (name, hash_name, sell_price, sell_listings)
-    VALUES ($1, $2, $3, $4)
+    INSERT INTO items (name, hash_name)
+    VALUES ($1, $2)
     ON CONFLICT (hash_name) 
-    DO UPDATE SET
-        sell_price = EXCLUDED.sell_price,
-        sell_listings = EXCLUDED.sell_listings
-    RETURNING id
+   	DO UPDATE SET name = EXCLUDED.name 
+    RETURNING id 
 )
 INSERT INTO prices (item_id, sell_price, sell_listings)
 SELECT id, $3, $4 FROM inserted_item

@@ -40,9 +40,9 @@ func main() {
 	}
 
 	priceService := price.NewPriceService(repo, publisher)
-	scrapper(ctx, priceService)
-	_, err = crn.AddFunc("@hourly", func() {
 
+	_, err = crn.AddFunc("@hourly", func() {
+		scrapper(ctx, priceService)
 	})
 	if err != nil {
 		log.Fatalln("cannot run cron")
@@ -78,7 +78,7 @@ func scrapper(ctx context.Context, priceService *price.PriceService) {
 
 			err := priceService.InsertItem(ctx, insertItem)
 			if err != nil {
-				log.Printf("Error unmarshalling response: %v", err)
+				log.Printf("Error inserting item: %v", err)
 				return
 			}
 		}
