@@ -40,9 +40,9 @@ func main() {
 	}
 
 	priceService := price.NewPriceService(repo, publisher)
-
+	scrapper(ctx, priceService)
 	_, err = crn.AddFunc("@hourly", func() {
-		scrapper(ctx, priceService)
+
 	})
 	if err != nil {
 		log.Fatalln("cannot run cron")

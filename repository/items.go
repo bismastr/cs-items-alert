@@ -108,3 +108,48 @@ func (q *Queries) GetItemPrice(ctx context.Context, itemId int) (ItemWithPriceHi
 
 	return item, rows.Err()
 }
+
+const getDailySummaryByItem = `
+SELECT 
+	item_id, 
+	dps.bucket , 
+	dps.avg_price , 
+	dps.max_price, 
+	dps.min_price, 
+	dps.opening_price,
+	dps.closing_price,
+	dps.data_points,
+	(closing_price - opening_price)::FLOAT / opening_price * 100 AS change_pct 
+	FROM daily_price_summary dps 
+WHERE dps.item_id = $1
+`
+
+type GetDailySummaryByItem struct {
+	ItemId       int
+	Bucket       pgtype.Timestamp
+	AvgPrice     float64
+	MaxPrice     int
+	MinPrice     int
+	OpeningPrice int
+	ClosingPrice int
+	DataPoints   int
+	ChangePct    float64
+}
+
+func (q *Queries) GetDailySummaryByItem(ctx context.Context, itemId int) (GetDailySummaryByItem, error) {
+	rows := q.db.QueryRow(ctx, getDailySummaryByItem, itemId)
+	var i GetDailySummaryByItem
+	err := rows.Scan(
+		&i.ItemId,
+		&i.Bucket,
+		&i.AvgPrice,
+		&i.MaxPrice,
+		&i.MinPrice,
+		&i.OpeningPrice,
+		&i.ClosingPrice,
+		&i.DataPoints,
+		&i.ChangePct,
+	)
+
+	return i, err
+}

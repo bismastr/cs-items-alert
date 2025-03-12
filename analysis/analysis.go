@@ -45,15 +45,13 @@ func (a *Analysis) PriceAnalysis(ctx context.Context) error {
 			return err
 		}
 
-		priceHistory, err := a.repo.GetItemPrice(ctx, priceUpdate.ItemId)
+		dailySummary, err := a.repo.GetDailySummaryByItem(ctx, priceUpdate.ItemId)
 		if err != nil {
 			log.Printf("Error getting item price history: %v", err)
 			return err
 		}
 
-		CalculateVolatility(&priceHistory)
-
-		content := fmt.Sprintf("Item: %s%d, have a price changed %v percent from the last 5 hours", priceHistory.Name, priceHistory.ID, priceHistory.Volatility)
+		content := fmt.Sprintf("Item: %d, have a price changed %v with max price: %d and min price: %d", dailySummary.ItemId, dailySummary.ChangePct, dailySummary.MaxPrice, dailySummary.MinPrice)
 		log.Println(content)
 		a.bot.SendMessageToChannel("1276782792876888075", content)
 	}
