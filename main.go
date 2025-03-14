@@ -84,7 +84,7 @@ func scrapper(ctx context.Context, priceService *price.PriceService) {
 		}
 	})
 
-	for start := 100; start <= 400; start += 100 {
+	for start := 0; start <= 400; start += 100 {
 		url := fmt.Sprintf("%s&start=%d", baseUrl, start)
 		c.Visit(url)
 	}

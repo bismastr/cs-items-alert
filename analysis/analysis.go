@@ -45,7 +45,6 @@ func (a *Analysis) PriceAnalysis(ctx context.Context) error {
 			log.Printf("Error decoding message: %v", err)
 			return err
 		}
-		log.Printf("item id %d", priceUpdate.ItemId)
 
 		if v, ok := alertsMap[priceUpdate.ItemId]; ok {
 			dailySummary, err := a.repo.GetDailySummaryByItem(ctx, priceUpdate.ItemId)
@@ -55,7 +54,7 @@ func (a *Analysis) PriceAnalysis(ctx context.Context) error {
 			}
 			change := fmt.Sprintf("%.2f%%", dailySummary.ChangePct)
 
-			report := fmt.Sprintf("Hi @<%d> Real Time Alert when price is above  %v\n", v.DiscordId, v.Threshold)
+			report := fmt.Sprintf("Hi <@%v> Real Time Alert when price is above  %v\n", v.DiscordId, v.Threshold)
 			report += "Open  | Close | Change  |\n"
 			report += "------------------------	\n"
 			report += fmt.Sprintf("$%4d | $%4d | %7s | ",

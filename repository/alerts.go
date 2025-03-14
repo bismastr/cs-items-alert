@@ -6,7 +6,7 @@ import (
 
 type GetAlertsRealtime struct {
 	Id            int
-	DiscordId     int
+	DiscordId     int64
 	ItemId        int
 	ConditionType string
 	IsActive      bool
@@ -16,6 +16,7 @@ type GetAlertsRealtime struct {
 const getAlertsRealTime = `
 SELECT 
 	id,
+	discord_id,
 	item_id,
 	condition_type,
 	is_active,
@@ -36,6 +37,7 @@ func (q *Queries) GetAlertsRealtime(ctx context.Context) ([]GetAlertsRealtime, e
 		var i GetAlertsRealtime
 		rows.Scan(
 			&i.Id,
+			&i.DiscordId,
 			&i.ItemId,
 			&i.ConditionType,
 			&i.IsActive,
