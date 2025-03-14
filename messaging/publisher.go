@@ -19,7 +19,7 @@ func NewPublihser(url string) (*Publisher, error) {
 	}, nil
 }
 
-func (p *Publisher) PublishPriceUpdate(q string, message []byte) error {
+func (p *Publisher) Publish(q string, message []byte) error {
 	ch, err := p.conn.Channel()
 	if err != nil {
 		return err

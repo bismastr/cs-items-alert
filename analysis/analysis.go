@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 
 	"github.com/bismastr/cs-price-alert/bot"
 	"github.com/bismastr/cs-price-alert/messaging"
@@ -28,7 +27,9 @@ func NewAnalysisService(repo *repository.Queries, bot *bot.Bot, consumer *messag
 
 func (a *Analysis) PriceAnalysis(ctx context.Context) error {
 	log.Println("Running Price analysis...")
-	msgs, close, err := a.consumer.PriceUpdateConsume("price_updates")
+	alertsMap, err := a.alertsRealTime(ctx)
+
+	msgs, close, err := a.consumer.Consume("price_updates")
 	if err != nil {
 		return err
 	}
@@ -44,34 +45,28 @@ func (a *Analysis) PriceAnalysis(ctx context.Context) error {
 			log.Printf("Error decoding message: %v", err)
 			return err
 		}
+		log.Printf("item id %d", priceUpdate.ItemId)
 
-		dailySummary, err := a.repo.GetDailySummaryByItem(ctx, priceUpdate.ItemId)
-		if err != nil {
-			log.Printf("Error getting item price history: %v", err)
-			return err
+		if v, ok := alertsMap[priceUpdate.ItemId]; ok {
+			dailySummary, err := a.repo.GetDailySummaryByItem(ctx, priceUpdate.ItemId)
+			if err != nil {
+				log.Printf("Error getting item price history: %v", err)
+				return err
+			}
+			change := fmt.Sprintf("%.2f%%", dailySummary.ChangePct)
+
+			report := fmt.Sprintf("Hi @<%d> Real Time Alert when price is above  %v\n", v.DiscordId, v.Threshold)
+			report += "Open  | Close | Change  |\n"
+			report += "------------------------	\n"
+			report += fmt.Sprintf("$%4d | $%4d | %7s | ",
+				dailySummary.OpeningPrice,
+				dailySummary.ClosingPrice,
+				change,
+			)
+
+			a.bot.SendMessageToChannel("1276782792876888075", report)
 		}
-
-		content := fmt.Sprintf("Item: %d, have a price changed %v with max price: %d and min price: %d", dailySummary.ItemId, dailySummary.ChangePct, dailySummary.MaxPrice, dailySummary.MinPrice)
-		log.Println(content)
-		a.bot.SendMessageToChannel("1276782792876888075", content)
 	}
 
 	return nil
-}
-
-func CalculateVolatility(i *repository.ItemWithPriceHistory) {
-	if len(i.PriceHistory) < 2 {
-		i.Volatility = 0
-		return
-	}
-
-	sum := 0.0
-	prev := float64(i.PriceHistory[0].SellPrice)
-	for _, entry := range i.PriceHistory[1:] {
-		current := float64(entry.SellPrice)
-		sum += math.Abs((current - prev) / prev)
-		prev = current
-	}
-
-	i.Volatility = sum / float64(len(i.PriceHistory)-1) * 100
 }
