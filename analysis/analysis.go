@@ -26,14 +26,15 @@ func NewAnalysisService(repo *repository.Queries, bot *bot.Bot, consumer *messag
 }
 
 func (a *Analysis) PriceAnalysis(ctx context.Context) error {
-	log.Println("Running Price analysis...")
 	alertsMap, err := a.alertsRealTime(ctx)
+	if err != nil {
+		return err
+	}
 
 	msgs, close, err := a.consumer.Consume("price_updates")
 	if err != nil {
 		return err
 	}
-
 	defer close()
 
 	var priceUpdate struct {
