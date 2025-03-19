@@ -31,7 +31,6 @@ func main() {
 	}
 
 	alertsService := alerts.NewAlertService(repo, publisher)
-	alertsService.DailyPriceSummary(ctx)
 
 	crn.AddFunc("@daily", func() {
 		alertsService.DailyPriceSummary(ctx)
