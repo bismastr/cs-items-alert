@@ -23,7 +23,7 @@ func (c *Consumer) Close() {
 	c.conn.Close()
 }
 
-func (c *Consumer) PriceUpdateConsume(q string) (<-chan amqp091.Delivery, func(), error) {
+func (c *Consumer) Consume(q string) (<-chan amqp091.Delivery, func(), error) {
 	ch, err := c.conn.Channel()
 	if err != nil {
 		return nil, nil, err
