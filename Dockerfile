@@ -5,9 +5,17 @@ WORKDIR /usr/src/app
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY . .
-RUN go build -v -o /scrape-cs-items 
+RUN go build -v -o /bin/scrape-cs-items 
+RUN go build -o /bin/alerts ./cmd/alerts
 
-FROM debian:bookworm
+#Scrape cs
+FROM debian:bookworm AS scrape-cs-items
 RUN apt-get update && apt-get install -y ca-certificates
-COPY --from=builder /scrape-cs-items /usr/local/bin
+COPY --from=builder /bin/scrape-cs-items /usr/local/bin
 CMD ["scrape-cs-items"]
+
+#Alert
+FROM debian:bookworm AS alerts
+RUN apt-get update && apt-get install -y ca-certificates
+COPY --from=builder /bin/alerts /usr/local/bin
+CMD ["alerts"]
