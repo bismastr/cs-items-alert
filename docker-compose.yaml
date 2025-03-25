@@ -7,7 +7,6 @@ services:
       target: scrape-cs-items # Matches Dockerfile target
     env_file:
       - .env # Environment variables (e.g., API keys)
-    restart: unless_stopped
 
   alerts:
     build:
@@ -17,4 +16,3 @@ services:
       - .env
     depends_on:
       - scrape-cs-items # Optional: Wait for scraper to start
-    restart: unless_stopped
