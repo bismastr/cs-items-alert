@@ -13,9 +13,3 @@ FROM debian:bookworm AS scrape-cs-items
 RUN apt-get update && apt-get install -y ca-certificates
 COPY --from=builder /bin/scrape-cs-items /usr/local/bin
 CMD ["scrape-cs-items"]
-
-#Alert
-FROM debian:bookworm AS alerts
-RUN apt-get update && apt-get install -y ca-certificates
-COPY --from=builder /bin/alerts /usr/local/bin
-CMD ["alerts"]
