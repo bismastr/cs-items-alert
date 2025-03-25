@@ -5,7 +5,7 @@ WORKDIR /usr/src/app
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY . .
-RUN go build -v -o /bin/scrape-cs-items ./cmd/scrape-cs-items
+RUN go build -v -o /bin/scrape-cs-items
 RUN go build -o /bin/alerts ./cmd/alerts
 
 # ----------------------------
