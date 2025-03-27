@@ -49,6 +49,6 @@ jobs:
       - name: Deploy ${{ matrix.service_name }} to ECS
         run: |
           aws ecs update-service \
-            --cluster $ECS_CLUSTER \
+            --cluster ${{ vars.ECS_CLUSTER }} \
             --service ${{ matrix.ecs_service }} \
             --force-new-deployment
