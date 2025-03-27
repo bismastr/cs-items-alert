@@ -16,8 +16,8 @@ jobs:
       matrix:
         include:
           - service_name: scrape-cs-items
-            ecr_image_var: ${{ vars.ECR_BACKEND_IMAGE }}
-            ecs_service: ${{ vars.ECS_BACKEND_SERVICE }}
+            ecr_image_var: ${{ vars.ECR_SCRAPPER_IMAGE }}
+            ecs_service: ${{ vars.ECS_SCRAPPER_SERVICE }}
           - service_name: alerts
             ecr_image_var: ${{ vars.ECR_ALERTS_IMAGE }}
             ecs_service: ${{ vars.ECS_ALERTS_SERVICE }}
