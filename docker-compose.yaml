@@ -4,9 +4,9 @@ services:
   scrape-cs-items:
     build:
       context: .
-      target: scrape-cs-items # Matches Dockerfile target
+      target: scrape-cs-items
     env_file:
-      - .env # Environment variables (e.g., API keys)
+      - .env
 
   alerts:
     build:
@@ -15,4 +15,4 @@ services:
     env_file:
       - .env
     depends_on:
-      - scrape-cs-items # Optional: Wait for scraper to start
+      - scrape-cs-items

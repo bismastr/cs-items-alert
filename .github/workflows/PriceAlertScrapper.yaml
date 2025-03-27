@@ -1,0 +1,60 @@
+name: Build and Deploy All Services to ECS
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - service_name: scrape-cs-items
+            ecr_image_var: ${{ vars.ECR_BACKEND_IMAGE }}
+            ecs_service: ${{ vars.ECS_BACKEND_SERVICE }}
+          - service_name: alerts
+            ecr_image_var: ${{ vars.ECR_ALERTS_IMAGE }}
+            ecs_service: ${{ vars.ECS_ALERTS_SERVICE }}
+    env:
+      ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login \
+            --username AWS \
+            --password-stdin $ECR_REGISTRY
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push Docker image (${{ matrix.service_name }})
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --target ${{ matrix.service_name }} \
+            -t $ECR_REGISTRY/${{ matrix.ecr_image_var }}:latest \
+            --push .
+
+      - name: Deploy ${{ matrix.service_name }} to ECS
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service ${{ matrix.ecs_service }} \
+            --force-new-deployment
