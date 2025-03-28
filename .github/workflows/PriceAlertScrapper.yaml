@@ -50,5 +50,5 @@ jobs:
         run: |
           aws ecs update-service \
             --cluster ${{ vars.ECS_CLUSTER }} \
-            --service cs-price-alert \
+            --service csgo-price-alert-service \
             --force-new-deployment
