@@ -25,6 +25,7 @@ var (
 
 func main() {
 	godotenv.Load()
+	log.SetOutput(os.Stdout)
 	ctx := context.Background()
 	crn := cron.New()
 
