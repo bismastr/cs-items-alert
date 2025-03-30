@@ -34,7 +34,7 @@ func main() {
 
 	alertsService := alerts.NewAlertService(repo, publisher)
 
-	crn.AddFunc("@hourly", func() {
+	crn.AddFunc("@daily", func() {
 		err := alertsService.DailyPriceSummary(ctx)
 		if err != nil {
 			log.Fatalf("Error creating daily summary : %v", err)
