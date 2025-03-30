@@ -16,6 +16,8 @@ import (
 
 func main() {
 	godotenv.Load()
+	log.SetOutput(os.Stdout)
+
 	ctx := context.Background()
 	crn := cron.New()
 
@@ -32,7 +34,7 @@ func main() {
 
 	alertsService := alerts.NewAlertService(repo, publisher)
 
-	crn.AddFunc("@daily", func() {
+	crn.AddFunc("@hourly", func() {
 		alertsService.DailyPriceSummary(ctx)
 	})
 

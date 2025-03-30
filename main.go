@@ -26,6 +26,7 @@ var (
 func main() {
 	godotenv.Load()
 	log.SetOutput(os.Stdout)
+
 	ctx := context.Background()
 	crn := cron.New()
 
@@ -45,6 +46,7 @@ func main() {
 	_, err = crn.AddFunc("@hourly", func() {
 		scrapper(ctx, priceService)
 	})
+
 	if err != nil {
 		log.Fatalln("cannot run cron")
 	}
