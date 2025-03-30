@@ -35,7 +35,10 @@ func main() {
 	alertsService := alerts.NewAlertService(repo, publisher)
 
 	crn.AddFunc("@hourly", func() {
-		alertsService.DailyPriceSummary(ctx)
+		err := alertsService.DailyPriceSummary(ctx)
+		if err != nil {
+			log.Fatalf("Error creating daily summary : %v", err)
+		}
 	})
 
 	fmt.Println("Running schedule cron...")
