@@ -50,6 +50,8 @@ SELECT
 	(closing_price - opening_price)::FLOAT / opening_price * 100 AS change_pct 
 	FROM daily_price_summary dps 
 WHERE dps.item_id = $1
+ORDER BY bucket DESC  
+LIMIT 1          
 `
 
 type GetDailySummaryByItem struct {
