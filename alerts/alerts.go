@@ -25,7 +25,7 @@ type NotificationPriceSummary struct {
 	ItemName      string  `json:"item_name"`
 	AvgPrice      float64 `json:"avg_price"`
 	MaxPrice      int     `json:"max_price"`
-	MinPrice      int     `json:"mint_price"`
+	MinPrice      int     `json:"min_price"`
 	OpeningPrice  int     `json:"opening_price"`
 	CloseingPrice int     `json:"closing_price"`
 	ChangePct     float64 `json:"change_pct"`
