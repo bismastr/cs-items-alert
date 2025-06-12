@@ -22,6 +22,7 @@ func NewAlertService(repo *repository.Queries, publihser *messaging.Publisher) *
 
 type NotificationPriceSummary struct {
 	ItemId        int     `json:"item_id"`
+	ItemName      string  `json:"item_name"`
 	AvgPrice      float64 `json:"avg_price"`
 	MaxPrice      int     `json:"max_price"`
 	MinPrice      int     `json:"mint_price"`
@@ -43,8 +44,14 @@ func (a *AlertService) DailyPriceSummary(ctx context.Context) error {
 			return err
 		}
 
+		itemData, err := a.repo.GetItemData(ctx, d.ItemId)
+		if err != nil {
+			return err
+		}
+
 		notification := NotificationPriceSummary{
 			ItemId:        summary.ItemId,
+			ItemName:      itemData.Name,
 			AvgPrice:      summary.AvgPrice,
 			MaxPrice:      summary.MaxPrice,
 			MinPrice:      summary.MinPrice,

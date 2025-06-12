@@ -37,6 +37,27 @@ func (q *Queries) InsertItem(ctx context.Context, arg InsertItem) (int, error) {
 	return id, nil
 }
 
+type GetItem struct {
+	Name     string
+	HashName string
+}
+
+const getItem = `
+SELECT name, hash_name FROM items 
+WHERE id = $1          
+`
+
+func (q *Queries) GetItemData(ctx context.Context, itemId int) (GetItem, error) {
+	row := q.db.QueryRow(ctx, getItem, itemId)
+	var i GetItem
+	err := row.Scan(
+		&i.Name,
+		&i.HashName,
+	)
+
+	return i, err
+}
+
 const getDailySummaryByItem = `
 SELECT 
 	item_id, 
@@ -67,9 +88,9 @@ type GetDailySummaryByItem struct {
 }
 
 func (q *Queries) GetDailySummaryByItem(ctx context.Context, itemId int) (GetDailySummaryByItem, error) {
-	rows := q.db.QueryRow(ctx, getDailySummaryByItem, itemId)
+	row := q.db.QueryRow(ctx, getDailySummaryByItem, itemId)
 	var i GetDailySummaryByItem
-	err := rows.Scan(
+	err := row.Scan(
 		&i.ItemId,
 		&i.Bucket,
 		&i.AvgPrice,
