@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/bismastr/cs-price-alert/internal/db"
+	messaaging "github.com/bismastr/cs-price-alert/internal/messaging"
+	"github.com/bismastr/cs-price-alert/internal/price"
+	repository2 "github.com/bismastr/cs-price-alert/internal/repository"
+	"github.com/bismastr/cs-price-alert/internal/steam"
 	"log"
 	"os"
 	"time"
 
-	"github.com/bismastr/cs-price-alert/db"
-	messaaging "github.com/bismastr/cs-price-alert/messaging"
-	"github.com/bismastr/cs-price-alert/price"
-	"github.com/bismastr/cs-price-alert/repository"
-	"github.com/bismastr/cs-price-alert/steam"
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/extensions"
 	"github.com/joho/godotenv"
@@ -34,7 +34,7 @@ func main() {
 		log.Fatalf("Error creating DB client: %v", err)
 	}
 
-	repo := repository.New(db.Pool)
+	repo := repository2.New(db.Pool)
 	publisher, err := messaaging.NewPublihser(os.Getenv("RMQ_URL"))
 	if err != nil {
 		log.Fatalf("Error creating DB client: %v", err)
@@ -77,7 +77,7 @@ func scrapper(ctx context.Context, priceService *price.PriceService) {
 		}
 
 		for _, item := range result.Results {
-			insertItem := repository.InsertItem{
+			insertItem := repository2.InsertItem{
 				Name:         item.Name,
 				HashName:     item.HashName,
 				SellPrice:    item.SellPrice,

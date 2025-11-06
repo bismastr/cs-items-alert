@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
+	"github.com/bismastr/cs-price-alert/internal/analysis"
+	"github.com/bismastr/cs-price-alert/internal/bot"
+	"github.com/bismastr/cs-price-alert/internal/db"
+	"github.com/bismastr/cs-price-alert/internal/messaging"
+	"github.com/bismastr/cs-price-alert/internal/repository"
 	"log"
 	"os"
 
-	"github.com/bismastr/cs-price-alert/analysis"
-	"github.com/bismastr/cs-price-alert/bot"
-	"github.com/bismastr/cs-price-alert/db"
-	"github.com/bismastr/cs-price-alert/messaging"
-	"github.com/bismastr/cs-price-alert/repository"
 	"github.com/joho/godotenv"
 )
 

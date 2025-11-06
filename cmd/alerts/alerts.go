@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/bismastr/cs-price-alert/internal/alerts"
+	"github.com/bismastr/cs-price-alert/internal/db"
+	"github.com/bismastr/cs-price-alert/internal/messaging"
+	"github.com/bismastr/cs-price-alert/internal/repository"
 	"log"
 	"os"
 
-	"github.com/bismastr/cs-price-alert/alerts"
-	"github.com/bismastr/cs-price-alert/db"
-	"github.com/bismastr/cs-price-alert/messaging"
-	"github.com/bismastr/cs-price-alert/repository"
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 )

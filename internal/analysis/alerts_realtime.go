@@ -2,8 +2,7 @@ package analysis
 
 import (
 	"context"
-
-	"github.com/bismastr/cs-price-alert/repository"
+	"github.com/bismastr/cs-price-alert/internal/repository"
 )
 
 func (a *Analysis) alertsRealTime(ctx context.Context) (map[int]repository.GetAlertsRealtime, error) {

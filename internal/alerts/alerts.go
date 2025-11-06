@@ -3,9 +3,8 @@ package alerts
 import (
 	"context"
 	"encoding/json"
-
-	"github.com/bismastr/cs-price-alert/messaging"
-	"github.com/bismastr/cs-price-alert/repository"
+	"github.com/bismastr/cs-price-alert/internal/messaging"
+	"github.com/bismastr/cs-price-alert/internal/repository"
 )
 
 type AlertService struct {

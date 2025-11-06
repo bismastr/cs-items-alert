@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/bismastr/cs-price-alert/internal/bot"
+	"github.com/bismastr/cs-price-alert/internal/messaging"
+	"github.com/bismastr/cs-price-alert/internal/repository"
 	"log"
-
-	"github.com/bismastr/cs-price-alert/bot"
-	"github.com/bismastr/cs-price-alert/messaging"
-	"github.com/bismastr/cs-price-alert/repository"
 )
 
 type Analysis struct {
