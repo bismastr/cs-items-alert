@@ -79,6 +79,8 @@ func (s *Scrapper) Start() error {
 
 			backoff := time.Duration(rateLimitHits*rateLimitHits) * s.config.BaseDelay
 			log.Printf("Rate limit hit detected. Backing off for %v before retrying...", backoff)
+			log.Printf("Recreating collector")
+			s.recreateCollector()
 
 			select {
 			case <-time.After(backoff):
@@ -129,4 +131,9 @@ func (s *Scrapper) visitWithRetry(url string) error {
 	}
 
 	return fmt.Errorf("all retry attempts failed")
+}
+
+func (s *Scrapper) recreateCollector() {
+	s.collector = NewCollector(s.config)
+	s.setupHandlers()
 }

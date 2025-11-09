@@ -3,7 +3,10 @@ INSERT INTO items (
     name,
     hash_name
 ) VALUES ($1, $2)
-ON CONFLICT (hash_name) DO NOTHING
+ON CONFLICT (hash_name) 
+DO UPDATE SET 
+    name = EXCLUDED.name,
+    updated_at = NOW()
 RETURNING *;
 
 -- name: GetItemByHashName :one
