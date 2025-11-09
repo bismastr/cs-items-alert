@@ -8,25 +8,27 @@ import (
 )
 
 type ScrapperApp struct {
+	ctx     context.Context
 	scraper *scrapper.Scrapper
 	config  scrapper.Config
 }
 
-func NewScraperApp() (*ScrapperApp, error) {
+func NewScraperApp(ctx context.Context) (*ScrapperApp, error) {
 	dbClient, err := db.NewDbClient()
 	if err != nil {
 		return nil, err
 	}
 
 	config := scrapper.DefaultConfig()
-	scraper := scrapper.NewScrapper(config, dbClient.Pool)
+	scraper := scrapper.NewScrapper(ctx, config, dbClient.Pool)
 
 	return &ScrapperApp{
+		ctx:     ctx,
 		scraper: scraper,
 		config:  config,
 	}, nil
 }
 
-func (app *ScrapperApp) Start(ctx context.Context) error {
-	return app.scraper.Start(ctx)
+func (app *ScrapperApp) Start() error {
+	return app.scraper.Start()
 }

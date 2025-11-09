@@ -9,6 +9,7 @@ func NewCollector(config Config) *colly.Collector {
 	c := colly.NewCollector(
 		colly.MaxDepth(1),
 		colly.UserAgent(config.UserAgent),
+		colly.AllowURLRevisit(),
 	)
 
 	c.Limit(

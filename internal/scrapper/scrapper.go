@@ -13,13 +13,15 @@ import (
 )
 
 type Scrapper struct {
+	ctx       context.Context
 	collector *colly.Collector
 	config    Config
 	repo      *repository.Queries
 }
 
-func NewScrapper(config Config, db repository.DBTX) *Scrapper {
+func NewScrapper(ctx context.Context, config Config, db repository.DBTX) *Scrapper {
 	s := &Scrapper{
+		ctx:       ctx,
 		collector: NewCollector(config),
 		config:    config,
 		repo:      repository.New(db),
@@ -39,7 +41,7 @@ func (s *Scrapper) setupHandlers() {
 		}
 
 		for _, item := range response.Results {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(s.ctx, 30*time.Second)
 
 			_, err := s.repo.CreateItem(
 				ctx,
@@ -62,7 +64,7 @@ func (s *Scrapper) setupHandlers() {
 	})
 }
 
-func (s *Scrapper) Start(ctx context.Context) error {
+func (s *Scrapper) Start() error {
 	totalPages := (s.config.TotalCount + s.config.PageSize - 1) / s.config.PageSize
 	var rateLimitHits int
 
@@ -80,44 +82,48 @@ func (s *Scrapper) Start(ctx context.Context) error {
 
 			select {
 			case <-time.After(backoff):
-			case <-ctx.Done():
-				return ctx.Err()
+				log.Printf("Backoff completed, retrying page %d", page)
+			case <-s.ctx.Done():
+				return s.ctx.Err()
 			}
 		}
 
 		pageUrl := fmt.Sprintf("%s&start=%d", s.config.BaseUrl, start)
-		err := s.visitWithRetry(ctx, pageUrl)
+		err := s.visitWithRetry(pageUrl)
 		if err != nil {
 			log.Printf("Error visiting page %d: %v", page, err)
-			page--
 			rateLimitHits++
+			page--
 
 			continue
 		}
+
+		//reset rate limit hits on successful visit
+		rateLimitHits = 0
 	}
 
 	return nil
 }
 
-func (s *Scrapper) visitWithRetry(ctx context.Context, url string) error {
-	for attempt := 1; attempt < s.config.MaxRetries; attempt++ {
+func (s *Scrapper) visitWithRetry(url string) error {
+	for attempt := 1; attempt <= s.config.MaxRetries; attempt++ {
 		err := s.collector.Visit(url)
 		if err == nil {
 			return nil //success!
 		}
 
 		if err.Error() == "Too Many Requests" {
-			return err //need to handle rate limit
+			return err //need to handle rate limit out of this function
 		}
 
 		if attempt < s.config.MaxRetries {
+			log.Printf("Error visiting attempt %d: %v", attempt, err)
 			backoff := time.Duration(attempt*attempt) * s.config.BaseDelay
 
 			select {
 			case <-time.After(backoff):
-				// this will continue to next attempt
-			case <-ctx.Done():
-				return ctx.Err()
+			case <-s.ctx.Done():
+				return s.ctx.Err()
 			}
 		}
 	}

@@ -20,7 +20,7 @@ func DefaultConfig() Config {
 		PageSize:         10,
 		BaseUrl:          "https://steamcommunity.com/market/search/render/?count=10&search_descriptions=0&sort_column=popular&sort_dir=desc&norender=1&category_730_Type=tag_CSGO_Type_WeaponCase&category_730_ItemSet%5B%5D=any&category_730_ProPlayer%5B%5D=any&category_730_StickerCapsule%5B%5D=any&category_730_Tournament%5B%5D=any&category_730_TournamentTeam%5B%5D=any&category_730_Type%5B%5D=tag_CSGO_Type_WeaponCase&category_730_Weapon%5B%5D=any&appid=730",
 		TotalCount:       437,
-		BaseDelay:        10 * time.Second,
+		BaseDelay:        15 * time.Second,
 		RandomDelay:      2 * time.Second,
 		MaxRetries:       5,
 		MaxRateLimitHits: 3,
