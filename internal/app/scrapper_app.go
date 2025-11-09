@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+
 	"github.com/bismastr/cs-price-alert/internal/db"
 	"github.com/bismastr/cs-price-alert/internal/scrapper"
 )
@@ -25,6 +27,6 @@ func NewScraperApp() (*ScrapperApp, error) {
 	}, nil
 }
 
-func (app *ScrapperApp) Start() error {
-	return app.scraper.Start()
+func (app *ScrapperApp) Start(ctx context.Context) error {
+	return app.scraper.Start(ctx)
 }
