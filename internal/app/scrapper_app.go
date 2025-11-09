@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/bismastr/cs-price-alert/internal/db"
 	"github.com/bismastr/cs-price-alert/internal/scrapper"
 )
 
@@ -10,8 +11,13 @@ type ScrapperApp struct {
 }
 
 func NewScraperApp() (*ScrapperApp, error) {
+	dbClient, err := db.NewDbClient()
+	if err != nil {
+		return nil, err
+	}
+
 	config := scrapper.DefaultConfig()
-	scraper := scrapper.NewScrapper(config)
+	scraper := scrapper.NewScrapper(config, dbClient.Pool)
 
 	return &ScrapperApp{
 		scraper: scraper,

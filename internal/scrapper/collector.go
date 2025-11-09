@@ -28,5 +28,4 @@ func NewCollector(config Config) *colly.Collector {
 
 	extensions.RandomUserAgent(c)
 	return c
-
 }

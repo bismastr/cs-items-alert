@@ -1,10 +1,13 @@
 package scrapper
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
+	"github.com/bismastr/cs-price-alert/internal/repository"
 	"github.com/bismastr/cs-price-alert/internal/steam"
 	"github.com/gocolly/colly"
 )
@@ -12,12 +15,14 @@ import (
 type Scrapper struct {
 	collector *colly.Collector
 	config    Config
+	repo      *repository.Queries
 }
 
-func NewScrapper(config Config) *Scrapper {
+func NewScrapper(config Config, db repository.DBTX) *Scrapper {
 	s := &Scrapper{
 		collector: NewCollector(config),
 		config:    config,
+		repo:      repository.New(db),
 	}
 
 	s.setupHandlers()
@@ -34,7 +39,20 @@ func (s *Scrapper) setupHandlers() {
 		}
 
 		for _, item := range response.Results {
-			log.Printf("Item: %s, Price: %s", item.Name, item.SellPriceText)
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+
+			_, err := s.repo.CreateItem(
+				ctx,
+				repository.CreateItemParams{
+					Name:     item.Name,
+					HashName: item.HashName,
+				},
+			)
+			if err != nil {
+				log.Printf("Error inserting item %s: %v ", item.HashName, err)
+			}
+
+			cancel()
 		}
 	})
 }
