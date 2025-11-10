@@ -9,3 +9,12 @@ sql:
         package: "repository"
         out: "internal/repository"
         sql_package: "pgx/v5"
+  - name: "timescale"
+    engine: "postgresql"
+    queries: "./internal/queries/timescale"
+    schema: "./migrations/timescale"
+    gen:
+      go:
+        package: "timescale_repository"
+        out: "internal/timescale_repository"
+        sql_package: "pgx/v5"

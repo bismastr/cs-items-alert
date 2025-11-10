@@ -7,8 +7,6 @@ package repository
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createItem = `-- name: CreateItem :one
@@ -31,44 +29,6 @@ type CreateItemParams struct {
 func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, error) {
 	row := q.db.QueryRow(ctx, createItem, arg.Name, arg.HashName)
 	var i Item
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.HashName,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const createOrGetItem = `-- name: CreateOrGetItem :one
-WITH inserted AS (
-    INSERT INTO items (name, hash_name) 
-    VALUES ($1, $2)
-    ON CONFLICT (hash_name) DO NOTHING
-    RETURNING id, name, hash_name, created_at, updated_at
-)
-SELECT id, name, hash_name, created_at, updated_at FROM inserted
-UNION ALL
-SELECT id, name, hash_name, created_at, updated_at FROM items WHERE hash_name = $2 AND NOT EXISTS (SELECT 1 FROM inserted)
-`
-
-type CreateOrGetItemParams struct {
-	Name     string
-	HashName string
-}
-
-type CreateOrGetItemRow struct {
-	ID        int32
-	Name      string
-	HashName  string
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-}
-
-func (q *Queries) CreateOrGetItem(ctx context.Context, arg CreateOrGetItemParams) (CreateOrGetItemRow, error) {
-	row := q.db.QueryRow(ctx, createOrGetItem, arg.Name, arg.HashName)
-	var i CreateOrGetItemRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,

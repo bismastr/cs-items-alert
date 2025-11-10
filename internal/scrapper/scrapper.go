@@ -70,7 +70,7 @@ func (s *Scrapper) Start() error {
 
 	for page := 0; page < totalPages; page++ {
 		start := page * s.config.PageSize
-
+		log.Printf("Starting to scrape page %d (start=%d)", page, start)
 		//handling rate limit
 		if rateLimitHits > 0 {
 			if rateLimitHits > s.config.MaxRateLimitHits {
