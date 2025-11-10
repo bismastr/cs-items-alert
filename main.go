@@ -4,14 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
+	"time"
+
+	"github.com/bismastr/cs-price-alert/internal/config"
 	"github.com/bismastr/cs-price-alert/internal/db"
 	messaaging "github.com/bismastr/cs-price-alert/internal/messaging"
 	"github.com/bismastr/cs-price-alert/internal/price"
 	repository2 "github.com/bismastr/cs-price-alert/internal/repository"
 	"github.com/bismastr/cs-price-alert/internal/steam"
-	"log"
-	"os"
-	"time"
 
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/extensions"
@@ -28,13 +30,14 @@ func main() {
 	log.SetOutput(os.Stdout)
 
 	crn := cron.New()
+	cfg := config.Load()
 
-	db, err := db.NewDbClient()
+	db, err := db.NewDbClient(cfg)
 	if err != nil {
 		log.Fatalf("Error creating DB client: %v", err)
 	}
 
-	repo := repository2.New(db.Pool)
+	repo := repository2.New(db.PostgresPool)
 	publisher, err := messaaging.NewPublihser(os.Getenv("RMQ_URL"))
 	if err != nil {
 		log.Fatalf("Error creating DB client: %v", err)
