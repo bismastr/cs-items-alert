@@ -23,7 +23,7 @@ func NewScraperApp(ctx context.Context) (*ScrapperApp, error) {
 	}
 
 	config := scrapper.DefaultConfig()
-	scraper := scrapper.NewScrapper(ctx, config, dbClient.PostgresPool)
+	scraper := scrapper.NewScrapper(ctx, config, dbClient)
 
 	return &ScrapperApp{
 		ctx:     ctx,

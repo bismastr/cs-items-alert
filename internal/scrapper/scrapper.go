@@ -7,24 +7,28 @@ import (
 	"log"
 	"time"
 
+	"github.com/bismastr/cs-price-alert/internal/db"
 	"github.com/bismastr/cs-price-alert/internal/repository"
 	"github.com/bismastr/cs-price-alert/internal/steam"
+	"github.com/bismastr/cs-price-alert/internal/timescale_repository"
 	"github.com/gocolly/colly"
 )
 
 type Scrapper struct {
-	ctx       context.Context
-	collector *colly.Collector
-	config    Config
-	repo      *repository.Queries
+	ctx            context.Context
+	collector      *colly.Collector
+	config         Config
+	repo           *repository.Queries
+	timescale_repo *timescale_repository.Queries
 }
 
-func NewScrapper(ctx context.Context, config Config, db repository.DBTX) *Scrapper {
+func NewScrapper(ctx context.Context, config Config, db *db.Db) *Scrapper {
 	s := &Scrapper{
-		ctx:       ctx,
-		collector: NewCollector(config),
-		config:    config,
-		repo:      repository.New(db),
+		ctx:            ctx,
+		collector:      NewCollector(config),
+		config:         config,
+		repo:           repository.New(db.PostgresPool),
+		timescale_repo: timescale_repository.New(db.TimescalePool),
 	}
 
 	s.setupHandlers()
@@ -42,8 +46,8 @@ func (s *Scrapper) setupHandlers() {
 
 		for _, item := range response.Results {
 			ctx, cancel := context.WithTimeout(s.ctx, 30*time.Second)
-
-			_, err := s.repo.CreateItem(
+			defer cancel()
+			createdItem, err := s.repo.CreateItem(
 				ctx,
 				repository.CreateItemParams{
 					Name:     item.Name,
@@ -54,11 +58,19 @@ func (s *Scrapper) setupHandlers() {
 				log.Printf("Error inserting item %s: %v ", item.HashName, err)
 			}
 
-			cancel()
+			err = s.timescale_repo.InsertPrice(ctx,
+				timescale_repository.InsertPriceParams{
+					ItemID:       createdItem.ID,
+					SellPrice:    int32(item.SellPrice),
+					SellListings: int32(item.SellListings),
+				},
+			)
+			if err != nil {
+				log.Printf("Error inserting price %s: %v", item.HashName, err)
+			}
 		}
 	})
 
-	//handle errors
 	s.collector.OnError(func(r *colly.Response, err error) {
 		log.Printf("Request URL: %s failed with response: %v \nError: %v", r.Request.URL, r, err)
 	})
