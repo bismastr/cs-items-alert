@@ -9,6 +9,57 @@ import (
 	"context"
 )
 
+const get24HourPricesChanges = `-- name: Get24HourPricesChanges :many
+WITH latest_sell_price AS (
+    SELECT DISTINCT ON (item_id)
+        item_id,
+        sell_price as latest_sell_price
+    FROM prices
+    WHERE time >= NOW() - INTERVAL '2 hours'
+    ORDER BY item_id, time DESC 
+),
+old_sell_price AS (
+    SELECT DISTINCT ON (item_id)
+        item_id,
+        sell_price as old_sell_price
+    FROM prices
+    WHERE time BETWEEN NOW() - INTERVAL '26 hours' AND NOW() - INTERVAL '22 hours'
+    ORDER BY item_id, time DESC
+)
+SELECT
+    l.item_id,
+    l.latest_sell_price,
+    o.old_sell_price
+FROM latest_sell_price l
+JOIN old_sell_price o ON l.item_id = o.item_id
+`
+
+type Get24HourPricesChangesRow struct {
+	ItemID          int32
+	LatestSellPrice int32
+	OldSellPrice    int32
+}
+
+func (q *Queries) Get24HourPricesChanges(ctx context.Context) ([]Get24HourPricesChangesRow, error) {
+	rows, err := q.db.Query(ctx, get24HourPricesChanges)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Get24HourPricesChangesRow
+	for rows.Next() {
+		var i Get24HourPricesChangesRow
+		if err := rows.Scan(&i.ItemID, &i.LatestSellPrice, &i.OldSellPrice); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertPrice = `-- name: InsertPrice :exec
 INSERT INTO prices (
     item_id,
