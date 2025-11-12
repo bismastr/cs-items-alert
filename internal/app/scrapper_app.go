@@ -12,6 +12,7 @@ type ScrapperApp struct {
 	ctx     context.Context
 	scraper *scrapper.Scrapper
 	config  scrapper.Config
+	db      *db.Db
 }
 
 func NewScraperApp(ctx context.Context) (*ScrapperApp, error) {
@@ -29,9 +30,15 @@ func NewScraperApp(ctx context.Context) (*ScrapperApp, error) {
 		ctx:     ctx,
 		scraper: scraper,
 		config:  config,
+		db:      dbClient,
 	}, nil
 }
 
 func (app *ScrapperApp) Start() error {
 	return app.scraper.Start()
+}
+
+func (app *ScrapperApp) Close() {
+	app.db.PostgresPool.Close()
+	app.db.TimescalePool.Close()
 }
