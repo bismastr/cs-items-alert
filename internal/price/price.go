@@ -2,35 +2,51 @@ package price
 
 import (
 	"context"
-	"fmt"
-	"log"
 
-	messaaging "github.com/bismastr/cs-price-alert/internal/messaging"
-	"github.com/bismastr/cs-price-alert/internal/repository"
+	"github.com/bismastr/cs-price-alert/internal/timescale_repository"
 )
 
+type PriceRepository interface {
+	Get24HourPricesChanges(ctx context.Context) ([]timescale_repository.Get24HourPricesChangesRow, error)
+	InsertPrice(ctx context.Context, params timescale_repository.InsertPriceParams) error
+}
+
 type PriceService struct {
-	repo      *repository.Queries
-	publisher *messaaging.Publisher
+	repo PriceRepository
 }
 
-func NewPriceService(repo *repository.Queries, publihser *messaaging.Publisher) *PriceService {
-	return &PriceService{repo: repo, publisher: publihser}
+type GetPriceChange24Hour struct {
+	ItemId    int32
+	ChangePct float64
 }
 
-func (s *PriceService) InsertItem(ctx context.Context, item repository.InsertItem) error {
-	id, err := s.repo.InsertItem(ctx, item)
-	if err != nil {
-		return err
-	}
+func NewPriceService(repo PriceRepository) *PriceService {
+	return &PriceService{repo: repo}
+}
 
-	message := fmt.Sprintf(`{"item_id": %d}`, id)
-
-	err = s.publisher.Publish("price_updates", []byte(message))
+func (s *PriceService) InsertItem(ctx context.Context, item timescale_repository.InsertPriceParams) error {
+	err := s.repo.InsertPrice(ctx, item)
 	if err != nil {
-		log.Printf("Failed to publish price update: %v", err)
 		return err
 	}
 
 	return nil
+}
+
+func (s *PriceService) GetLatestPriceByHashName(ctx context.Context) ([]GetPriceChange24Hour, error) {
+	prices, err := s.repo.Get24HourPricesChanges(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []GetPriceChange24Hour
+	for _, price := range prices {
+		changePct := float64((price.LatestSellPrice - price.OldSellPrice)) / float64(price.OldSellPrice) * 100
+		result = append(result, GetPriceChange24Hour{
+			ItemId:    price.ItemID,
+			ChangePct: changePct,
+		})
+	}
+
+	return result, nil
 }
