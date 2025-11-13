@@ -63,6 +63,43 @@ func (q *Queries) GetItemByHashName(ctx context.Context, hashName string) (Item,
 	return i, err
 }
 
+const getItemByID = `-- name: GetItemByID :many
+SELECT
+    id,
+    name,
+    hash_name,
+    created_at,
+    updated_at
+FROM items
+WHERE id = ANY($1::int[])
+`
+
+func (q *Queries) GetItemByID(ctx context.Context, ids []int32) ([]Item, error) {
+	rows, err := q.db.Query(ctx, getItemByID, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.HashName,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getItems = `-- name: GetItems :many
 SELECT
     id,

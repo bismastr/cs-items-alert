@@ -28,3 +28,13 @@ SELECT
     updated_at
 FROM items;
 
+-- name: GetItemByID :many
+SELECT
+    id,
+    name,
+    hash_name,
+    created_at,
+    updated_at
+FROM items
+WHERE id = ANY(sqlc.arg(ids)::int[]);
+
