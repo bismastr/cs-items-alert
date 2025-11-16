@@ -11,6 +11,7 @@ type Config struct {
 	Database    DatabaseConfig
 	TimescaleDB DatabaseConfig
 	Scraper     ScraperConfig
+	RabbitMQ    RabbitMQConfig
 }
 
 type DatabaseConfig struct {
@@ -30,6 +31,13 @@ type ScraperConfig struct {
 	BaseDelay   time.Duration
 	RandomDelay time.Duration
 	MaxRetries  int
+}
+
+type RabbitMQConfig struct {
+	URL      string
+	Host     string
+	Username string
+	Password string
 }
 
 func Load() *Config {
@@ -64,6 +72,12 @@ func Load() *Config {
 			BaseDelay:   v.GetDuration("scraper.basedelay"),
 			RandomDelay: v.GetDuration("scraper.randomdelay"),
 			MaxRetries:  v.GetInt("scraper.maxretries"),
+		},
+		RabbitMQ: RabbitMQConfig{
+			URL:      v.GetString("rmq.url"),
+			Host:     v.GetString("rmq.host"),
+			Username: v.GetString("rmq.username"),
+			Password: v.GetString("rmq.password"),
 		},
 	}
 
