@@ -35,6 +35,7 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/cs-items-scrapper:latest
+          target: scrapper
           file: ./Dockerfile
           cache-from: type=gha # Use GHA cache for faster builds
           cache-to: type=gha,mode=max # Save new layers to the cache
