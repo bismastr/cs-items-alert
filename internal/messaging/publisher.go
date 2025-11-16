@@ -15,7 +15,7 @@ type Publisher struct {
 	mu             sync.Mutex
 }
 
-func NewPublisher(config config.Config) (*Publisher, error) {
+func NewPublisher(config *config.Config) (*Publisher, error) {
 	conn, err := amqp091.Dial(config.RabbitMQ.URL)
 	if err != nil {
 		return nil, err

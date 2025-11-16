@@ -2,25 +2,59 @@ package alert
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
-	"github.com/bismastr/cs-price-alert/internal/timescale_repository"
+	"github.com/bismastr/cs-price-alert/internal/messaging"
+	"github.com/bismastr/cs-price-alert/internal/price"
 )
 
-// TODO: i want to implement daily alert if price above certain threshold
-type TimescaleRepository interface {
-	Get24HourPricesChanges(ctx context.Context) ([]timescale_repository.Get24HourPricesChangesRow, error)
+type AllertService struct {
+	priceService *price.PriceService
+	messaging    *messaging.Publisher
 }
 
-type AlertService struct {
-	timescaleRepository TimescaleRepository
+type PriceChangesAlert struct {
+	ItemId    int32   `json:"item_id"`
+	ChangePct float64 `json:"change_pct"`
+	Name      string  `json:"name"`
+	AlertType string  `json:"alert_type"`
 }
 
-func NewAlertService(timescaleRepo TimescaleRepository) *AlertService {
-	return &AlertService{
-		timescaleRepository: timescaleRepo,
+func NewAlertService(priceService *price.PriceService, messaging *messaging.Publisher) *AllertService {
+	return &AllertService{
+		priceService: priceService,
+		messaging:    messaging,
 	}
 }
 
-func (s *AlertService) Alert24Hour(ctx context.Context) ([]timescale_repository.Get24HourPricesChangesRow, error) {
-	return s.timescaleRepository.Get24HourPricesChanges(ctx)
+func (s *AllertService) Alert24Hour(ctx context.Context) error {
+	priceChanges, err := s.priceService.GetPriceChange24Hour(ctx)
+	if err != nil {
+		return fmt.Errorf("error: get price change 24 hour: %w", err)
+	}
+
+	for _, price := range priceChanges {
+		if price.ChangePct < 10.0 && price.ChangePct > -10.0 {
+			continue
+		}
+
+		var alertType string
+		if price.ChangePct < 0 {
+			alertType = AlertTypeDecrease
+		} else {
+			alertType = AlertTypeIncrease
+		}
+
+		message, _ := json.Marshal(PriceChangesAlert{
+			ItemId:    price.ItemId,
+			ChangePct: price.ChangePct,
+			Name:      price.Name,
+			AlertType: alertType,
+		})
+
+		s.messaging.Publish(ctx, messaging.QueueDiscordAlert, message)
+	}
+
+	return nil
 }

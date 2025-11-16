@@ -48,7 +48,7 @@ func TestGetPriceChange24Hour_Success(t *testing.T) {
 		{ID: 2, HashName: "item2"},
 	}, nil)
 
-	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
+	service := NewPriceServiceWithRepos(mockTimescaleRepo, mockPostgresRepo)
 
 	result, err := service.GetPriceChange24Hour(ctx)
 
@@ -75,7 +75,7 @@ func TestGetPriceChange24Hour_Error(t *testing.T) {
 		{ID: 2, HashName: "item2"},
 	}, nil)
 
-	service := NewPriceService(mockRepo, mockPostgresRepo)
+	service := NewPriceServiceWithRepos(mockRepo, mockPostgresRepo)
 
 	result, err := service.GetPriceChange24Hour(ctx)
 
@@ -98,9 +98,9 @@ func TestInsertItem_Success(t *testing.T) {
 
 	mockRepo.On("InsertPrice", ctx, params).Return(nil)
 
-	service := NewPriceService(mockRepo, mockPostgresRepo)
+	service := NewPriceServiceWithRepos(mockRepo, mockPostgresRepo)
 
-	err := service.InsertItem(ctx, params)
+	err := service.InsertPrice(ctx, params)
 
 	assert.NoError(t, err)
 
@@ -121,9 +121,9 @@ func TestInsertItem_Error(t *testing.T) {
 
 	mockPostgresRepo := new(MockPostgresRepo)
 
-	service := NewPriceService(mockRepo, mockPostgresRepo)
+	service := NewPriceServiceWithRepos(mockRepo, mockPostgresRepo)
 
-	err := service.InsertItem(ctx, params)
+	err := service.InsertPrice(ctx, params)
 
 	assert.Error(t, err)
 

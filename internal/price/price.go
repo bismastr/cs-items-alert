@@ -3,6 +3,7 @@ package price
 import (
 	"context"
 
+	"github.com/bismastr/cs-price-alert/internal/db"
 	"github.com/bismastr/cs-price-alert/internal/repository"
 	"github.com/bismastr/cs-price-alert/internal/timescale_repository"
 )
@@ -35,14 +36,29 @@ type InsertPriceParams struct {
 	SellListings int32
 }
 
-func NewPriceService(timescaleRepo TimescaleRepository, postgresRepo PostgresRepository) *PriceService {
+type Service interface {
+	GetPriceChange24Hour(ctx context.Context) ([]GetPriceChange24HourResults, error)
+	InsertPrice(ctx context.Context, params timescale_repository.InsertPriceParams) error
+}
+
+func NewPriceService(db *db.Db) *PriceService {
+	return &PriceService{
+		timescaleRepo: timescale_repository.New(db.TimescalePool),
+		postgresRepo:  repository.New(db.PostgresPool),
+	}
+}
+
+func NewPriceServiceWithRepos(
+	timescaleRepo TimescaleRepository,
+	postgresRepo PostgresRepository,
+) *PriceService {
 	return &PriceService{
 		timescaleRepo: timescaleRepo,
 		postgresRepo:  postgresRepo,
 	}
 }
 
-func (s *PriceService) InsertItem(ctx context.Context, item timescale_repository.InsertPriceParams) error {
+func (s *PriceService) InsertPrice(ctx context.Context, item timescale_repository.InsertPriceParams) error {
 	err := s.timescaleRepo.InsertPrice(ctx, item)
 	if err != nil {
 		return err
