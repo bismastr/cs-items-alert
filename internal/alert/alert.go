@@ -15,10 +15,12 @@ type AllertService struct {
 }
 
 type PriceChangesAlert struct {
-	ItemId    int32   `json:"item_id"`
-	ChangePct float64 `json:"change_pct"`
-	Name      string  `json:"name"`
-	AlertType string  `json:"alert_type"`
+	ItemId          int32   `json:"item_id"`
+	ChangePct       float64 `json:"change_pct"`
+	Name            string  `json:"name"`
+	AlertType       string  `json:"alert_type"`
+	LatestSellPrice int32   `json:"latest_price"`
+	OldSellPrice    int32   `json:"old_price"`
 }
 
 func NewAlertService(priceService *price.PriceService, messaging *messaging.Publisher) *AllertService {
@@ -47,10 +49,12 @@ func (s *AllertService) Alert24Hour(ctx context.Context) error {
 		}
 
 		message, _ := json.Marshal(PriceChangesAlert{
-			ItemId:    price.ItemId,
-			ChangePct: price.ChangePct,
-			Name:      price.Name,
-			AlertType: alertType,
+			ItemId:          price.ItemId,
+			ChangePct:       price.ChangePct,
+			Name:            price.Name,
+			AlertType:       alertType,
+			LatestSellPrice: price.LatestSellPrice,
+			OldSellPrice:    price.OldSellPrice,
 		})
 
 		s.messaging.Publish(ctx, messaging.QueueDiscordAlert, message)
