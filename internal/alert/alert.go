@@ -37,7 +37,7 @@ func (s *AllertService) Alert24Hour(ctx context.Context) error {
 	}
 
 	for _, price := range priceChanges {
-		if price.ChangePct < 10.0 && price.ChangePct > -10.0 {
+		if price.ChangePct < 20.0 && price.ChangePct > -20.0 {
 			continue
 		}
 
