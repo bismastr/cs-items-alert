@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/bismastr/cs-price-alert/internal/messaging"
-	"github.com/bismastr/cs-price-alert/internal/price"
+	"github.com/bismastr/cs-price-alert/internal/services/price"
 )
 
 type AllertService struct {

@@ -3,11 +3,11 @@ package app
 import (
 	"context"
 
-	"github.com/bismastr/cs-price-alert/internal/alert"
 	"github.com/bismastr/cs-price-alert/internal/config"
 	"github.com/bismastr/cs-price-alert/internal/db"
 	"github.com/bismastr/cs-price-alert/internal/messaging"
-	"github.com/bismastr/cs-price-alert/internal/price"
+	"github.com/bismastr/cs-price-alert/internal/services/alert"
+	"github.com/bismastr/cs-price-alert/internal/services/price"
 )
 
 type AlertApp struct {
