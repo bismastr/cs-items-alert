@@ -12,6 +12,7 @@ type Config struct {
 	TimescaleDB DatabaseConfig
 	Scraper     ScraperConfig
 	RabbitMQ    RabbitMQConfig
+	Server      ServerConfig
 }
 
 type DatabaseConfig struct {
@@ -38,6 +39,10 @@ type RabbitMQConfig struct {
 	Host     string
 	Username string
 	Password string
+}
+
+type ServerConfig struct {
+	Port string
 }
 
 func Load() *Config {
@@ -78,6 +83,9 @@ func Load() *Config {
 			Host:     v.GetString("rmq.host"),
 			Username: v.GetString("rmq.username"),
 			Password: v.GetString("rmq.password"),
+		},
+		Server: ServerConfig{
+			Port: v.GetString("server.port"),
 		},
 	}
 

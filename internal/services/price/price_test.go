@@ -98,7 +98,7 @@ func TestInsertItem_Success(t *testing.T) {
 
 	mockRepo.On("InsertPrice", ctx, params).Return(nil)
 
-	service := NewPriceServiceWithRepos(mockRepo, mockPostgresRepo)
+	service := NewPriceService(mockRepo, mockPostgresRepo)
 
 	err := service.InsertPrice(ctx, params)
 

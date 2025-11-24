@@ -3,7 +3,6 @@ package price
 import (
 	"context"
 
-	"github.com/bismastr/cs-price-alert/internal/db"
 	"github.com/bismastr/cs-price-alert/internal/repository"
 	"github.com/bismastr/cs-price-alert/internal/timescale_repository"
 )
@@ -41,10 +40,11 @@ type Service interface {
 	InsertPrice(ctx context.Context, params timescale_repository.InsertPriceParams) error
 }
 
-func NewPriceService(db *db.Db) *PriceService {
+func NewPriceService(timescaleRepo TimescaleRepository,
+	postgresRepo PostgresRepository) *PriceService {
 	return &PriceService{
-		timescaleRepo: timescale_repository.New(db.TimescalePool),
-		postgresRepo:  repository.New(db.PostgresPool),
+		timescaleRepo: timescaleRepo,
+		postgresRepo:  postgresRepo,
 	}
 }
 
