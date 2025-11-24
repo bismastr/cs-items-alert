@@ -53,8 +53,8 @@ func (s *AllertService) Alert24Hour(ctx context.Context) error {
 			ChangePct:       price.ChangePct,
 			Name:            price.Name,
 			AlertType:       alertType,
-			LatestSellPrice: price.LatestSellPrice,
-			OldSellPrice:    price.OldSellPrice,
+			LatestSellPrice: s.priceService.FormatPrice(price.LatestSellPrice),
+			OldSellPrice:    s.priceService.FormatPrice(price.OldSellPrice),
 		})
 
 		s.messaging.Publish(ctx, messaging.QueueDiscordAlert, message)
