@@ -101,14 +101,14 @@ func (s *PriceService) GetPriceChange24Hour(ctx context.Context) ([]GetPriceChan
 			ItemId:          item.ID,
 			ChangePct:       priceChange.ChangePct,
 			Name:            item.Name,
-			OldSellPrice:    s.FormatPrice(priceChange.OldSellPrice),
-			LatestSellPrice: s.FormatPrice(priceChange.LatestSellPrice),
+			OldSellPrice:    priceChange.OldSellPrice,
+			LatestSellPrice: priceChange.LatestSellPrice,
 		})
 	}
 
 	return result, nil
 }
 
-func (s *PriceService) FormatPrice(cents int32) int32 {
-	return cents / 100
+func (s *PriceService) FormatPrice(cents int32) float64 {
+	return float64(cents) / 100
 }

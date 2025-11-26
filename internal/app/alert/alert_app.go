@@ -29,6 +29,7 @@ func NewAlertApp(ctx context.Context) (*AlertApp, error) {
 	//Init repo
 	timescaleRepo := timescale_repository.New(dbClient.TimescalePool)
 	postgresRepo := repository.New(dbClient.PostgresPool)
+
 	priceService := price.NewPriceService(timescaleRepo, postgresRepo)
 
 	messagingPublisher, err := messaging.NewPublisher(cfg)
