@@ -38,3 +38,20 @@ SELECT
 FROM items
 WHERE id = ANY(sqlc.arg(ids)::int[]);
 
+-- name: SearchItemsByName :many
+WITH score AS (
+    SELECT 
+        id,
+        name, 
+        similarity(name, sqlc.arg(name)) AS sim_score
+    FROM items
+)
+SELECT 
+    id,
+    name,
+    sim_score
+FROM score
+WHERE sim_score > 0.1
+ORDER BY sim_score DESC
+LIMIT $1;
+

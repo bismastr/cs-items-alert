@@ -15,3 +15,12 @@ type Price struct {
 	SellListings int32
 	Time         pgtype.Timestamptz
 }
+
+type PriceChanges24h struct {
+	Bucket       interface{}
+	ItemID       int32
+	OpenPrice    interface{}
+	ClosePrice   interface{}
+	SellListings interface{}
+	ChangePct    interface{}
+}

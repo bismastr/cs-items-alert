@@ -1,16 +1,15 @@
 package server
 
 import (
+	"net/http"
+
+	"github.com/bismastr/cs-price-alert/internal/response"
 	"github.com/bismastr/cs-price-alert/internal/services/price"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 )
 
-type Router struct {
-	PriceService *price.PriceService
-}
-
-func NewRouter(priceService *price.PriceService) *chi.Mux {
+func NewRouter(priceHandler *price.PriceHandler) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
@@ -20,6 +19,14 @@ func NewRouter(priceService *price.PriceService) *chi.Mux {
 		MaxAge:           300,
 		AllowCredentials: false,
 	}))
+
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		response.Success(w, map[string]string{"status": "ok"})
+	})
+
+	r.Route("/api", func(r chi.Router) {
+
+	})
 
 	return r
 }

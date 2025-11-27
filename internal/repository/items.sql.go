@@ -135,3 +135,52 @@ func (q *Queries) GetItems(ctx context.Context) ([]Item, error) {
 	}
 	return items, nil
 }
+
+const searchItemsByName = `-- name: SearchItemsByName :many
+WITH score AS (
+    SELECT 
+        id,
+        name, 
+        similarity(name, $2) AS sim_score
+    FROM items
+)
+SELECT 
+    id,
+    name,
+    sim_score
+FROM score
+WHERE sim_score > 0.1
+ORDER BY sim_score DESC
+LIMIT $1
+`
+
+type SearchItemsByNameParams struct {
+	Limit int32
+	Name  string
+}
+
+type SearchItemsByNameRow struct {
+	ID       int32
+	Name     string
+	SimScore float32
+}
+
+func (q *Queries) SearchItemsByName(ctx context.Context, arg SearchItemsByNameParams) ([]SearchItemsByNameRow, error) {
+	rows, err := q.db.Query(ctx, searchItemsByName, arg.Limit, arg.Name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchItemsByNameRow
+	for rows.Next() {
+		var i SearchItemsByNameRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.SimScore); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
