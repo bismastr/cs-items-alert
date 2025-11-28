@@ -28,3 +28,16 @@ SELECT
     o.old_sell_price
 FROM latest_sell_price l
 JOIN old_sell_price o ON l.item_id = o.item_id;
+
+-- name: GetPriceChangesByItemIDs :many
+SELECT 
+    item_id,
+    bucket,
+    open_price,
+    close_price,
+    sell_listings,
+    change_pct
+FROM price_changes_24h
+WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
+  AND item_id = ANY(sqlc.arg(item_ids)::int[])
+LIMIT sqlc.arg(max_results);

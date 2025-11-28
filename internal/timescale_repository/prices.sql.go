@@ -60,6 +60,61 @@ func (q *Queries) Get24HourPricesChanges(ctx context.Context) ([]Get24HourPrices
 	return items, nil
 }
 
+const getPriceChangesByItemIDs = `-- name: GetPriceChangesByItemIDs :many
+SELECT 
+    item_id,
+    bucket,
+    open_price,
+    close_price,
+    sell_listings,
+    change_pct
+FROM price_changes_24h
+WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
+  AND item_id = ANY($1::int[])
+LIMIT $2
+`
+
+type GetPriceChangesByItemIDsParams struct {
+	ItemIds    []int32
+	MaxResults int32
+}
+
+type GetPriceChangesByItemIDsRow struct {
+	ItemID       int32
+	Bucket       interface{}
+	OpenPrice    interface{}
+	ClosePrice   interface{}
+	SellListings interface{}
+	ChangePct    interface{}
+}
+
+func (q *Queries) GetPriceChangesByItemIDs(ctx context.Context, arg GetPriceChangesByItemIDsParams) ([]GetPriceChangesByItemIDsRow, error) {
+	rows, err := q.db.Query(ctx, getPriceChangesByItemIDs, arg.ItemIds, arg.MaxResults)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPriceChangesByItemIDsRow
+	for rows.Next() {
+		var i GetPriceChangesByItemIDsRow
+		if err := rows.Scan(
+			&i.ItemID,
+			&i.Bucket,
+			&i.OpenPrice,
+			&i.ClosePrice,
+			&i.SellListings,
+			&i.ChangePct,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertPrice = `-- name: InsertPrice :exec
 INSERT INTO prices (
     item_id,
