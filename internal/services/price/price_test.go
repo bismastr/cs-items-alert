@@ -23,6 +23,11 @@ func (m *MockPostgresRepo) GetItemByID(ctx context.Context, ids []int32) ([]repo
 	return args.Get(0).([]repository.Item), args.Error(1)
 }
 
+func (m *MockPostgresRepo) SearchItemsByName(ctx context.Context, arg repository.SearchItemsByNameParams) ([]repository.SearchItemsByNameRow, error) {
+	args := m.Called(ctx, arg)
+	return args.Get(0).([]repository.SearchItemsByNameRow), args.Error(1)
+}
+
 func (m *MockTimescaleRepo) Get24HourPricesChanges(ctx context.Context) ([]timescale_repository.Get24HourPricesChangesRow, error) {
 	args := m.Called(ctx)
 	return args.Get(0).([]timescale_repository.Get24HourPricesChangesRow), args.Error(1)
@@ -31,6 +36,11 @@ func (m *MockTimescaleRepo) Get24HourPricesChanges(ctx context.Context) ([]times
 func (m *MockTimescaleRepo) InsertPrice(ctx context.Context, params timescale_repository.InsertPriceParams) error {
 	args := m.Called(ctx, params)
 	return args.Error(0)
+}
+
+func (m *MockTimescaleRepo) GetPriceChangesByItemIDs(ctx context.Context, arg timescale_repository.GetPriceChangesByItemIDsParams) ([]timescale_repository.GetPriceChangesByItemIDsRow, error) {
+	args := m.Called(ctx, arg)
+	return args.Get(0).([]timescale_repository.GetPriceChangesByItemIDsRow), args.Error(1)
 }
 
 func TestGetPriceChange24Hour_Success(t *testing.T) {
@@ -128,4 +138,46 @@ func TestInsertItem_Error(t *testing.T) {
 	assert.Error(t, err)
 
 	mockRepo.AssertExpectations(t)
+}
+
+func TestSearchPriceChanges_Success(t *testing.T) {
+	ctx := context.Background()
+
+	mockTimescaleRepo := new(MockTimescaleRepo)
+	mockPostgresRepo := new(MockPostgresRepo)
+
+	searchParams := repository.SearchItemsByNameParams{
+		Limit: 10,
+		Name:  "item",
+	}
+
+	mockPostgresRepo.On("SearchItemsByName", ctx, searchParams).Return([]repository.SearchItemsByNameRow{
+		{ID: 1, Name: "item1"},
+		{ID: 2, Name: "item2"},
+	}, nil)
+
+	priceChangesParams := timescale_repository.GetPriceChangesByItemIDsParams{
+		ItemIds:    []int32{1, 2},
+		MaxResults: 10,
+	}
+
+	mockTimescaleRepo.On("GetPriceChangesByItemIDs", ctx, priceChangesParams).Return([]timescale_repository.GetPriceChangesByItemIDsRow{
+		{ItemID: 1, OpenPrice: 1000, ClosePrice: 1200, ChangePct: 20.0},
+		{ItemID: 2, OpenPrice: 1000, ClosePrice: 800, ChangePct: -20.0},
+	}, nil)
+
+	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
+
+	result, err := service.GetSearchPriceChanges(ctx, GetSearchPriceChanggesParams{
+		Limit: 10,
+		Query: "item",
+	})
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.EqualValues(t, 20.0, result[0].ChangePct)
+	assert.EqualValues(t, -20.0, result[1].ChangePct)
+
+	mockPostgresRepo.AssertExpectations(t)
+	mockTimescaleRepo.AssertExpectations(t)
 }

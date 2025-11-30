@@ -7,6 +7,8 @@ package timescale_repository
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const get24HourPricesChanges = `-- name: Get24HourPricesChanges :many
@@ -62,12 +64,12 @@ func (q *Queries) Get24HourPricesChanges(ctx context.Context) ([]Get24HourPrices
 
 const getPriceChangesByItemIDs = `-- name: GetPriceChangesByItemIDs :many
 SELECT 
-    item_id,
-    bucket,
-    open_price,
-    close_price,
-    sell_listings,
-    change_pct
+    item_id::integer,
+    bucket::timestamptz,
+    open_price::integer,
+    close_price::integer,
+    sell_listings::integer,
+    change_pct::float
 FROM price_changes_24h
 WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
   AND item_id = ANY($1::int[])
@@ -81,11 +83,11 @@ type GetPriceChangesByItemIDsParams struct {
 
 type GetPriceChangesByItemIDsRow struct {
 	ItemID       int32
-	Bucket       interface{}
-	OpenPrice    interface{}
-	ClosePrice   interface{}
-	SellListings interface{}
-	ChangePct    interface{}
+	Bucket       pgtype.Timestamptz
+	OpenPrice    int32
+	ClosePrice   int32
+	SellListings int32
+	ChangePct    float64
 }
 
 func (q *Queries) GetPriceChangesByItemIDs(ctx context.Context, arg GetPriceChangesByItemIDsParams) ([]GetPriceChangesByItemIDsRow, error) {

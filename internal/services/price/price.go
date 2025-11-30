@@ -10,10 +10,12 @@ import (
 type TimescaleRepository interface {
 	Get24HourPricesChanges(ctx context.Context) ([]timescale_repository.Get24HourPricesChangesRow, error)
 	InsertPrice(ctx context.Context, params timescale_repository.InsertPriceParams) error
+	GetPriceChangesByItemIDs(ctx context.Context, arg timescale_repository.GetPriceChangesByItemIDsParams) ([]timescale_repository.GetPriceChangesByItemIDsRow, error)
 }
 
 type PostgresRepository interface {
 	GetItemByID(ctx context.Context, ids []int32) ([]repository.Item, error)
+	SearchItemsByName(ctx context.Context, arg repository.SearchItemsByNameParams) ([]repository.SearchItemsByNameRow, error)
 }
 
 type PriceService struct {
@@ -103,6 +105,49 @@ func (s *PriceService) GetPriceChange24Hour(ctx context.Context) ([]GetPriceChan
 			Name:            item.Name,
 			OldSellPrice:    priceChange.OldSellPrice,
 			LatestSellPrice: priceChange.LatestSellPrice,
+		})
+	}
+
+	return result, nil
+}
+
+type GetSearchPriceChanggesParams struct {
+	Query string
+	Limit int32
+}
+
+func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params GetSearchPriceChanggesParams) ([]GetPriceChange24HourResults, error) {
+	items, err := s.postgresRepo.SearchItemsByName(ctx,
+		repository.SearchItemsByNameParams{
+			Limit: params.Limit,
+			Name:  params.Query,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	itemsId := make([]int32, 0, len(items))
+	for _, item := range items {
+		itemsId = append(itemsId, item.ID)
+	}
+
+	priceChanges, err := s.timescaleRepo.GetPriceChangesByItemIDs(ctx, timescale_repository.GetPriceChangesByItemIDsParams{
+		ItemIds:    itemsId,
+		MaxResults: params.Limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var result []GetPriceChange24HourResults
+	for i := 0; i < len(priceChanges); i++ {
+		result = append(result, GetPriceChange24HourResults{
+			ItemId:          priceChanges[i].ItemID,
+			Name:            items[i].Name,
+			ChangePct:       priceChanges[i].ChangePct,
+			OldSellPrice:    priceChanges[i].OpenPrice,
+			LatestSellPrice: priceChanges[i].ClosePrice,
 		})
 	}
 

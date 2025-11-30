@@ -31,12 +31,12 @@ JOIN old_sell_price o ON l.item_id = o.item_id;
 
 -- name: GetPriceChangesByItemIDs :many
 SELECT 
-    item_id,
-    bucket,
-    open_price,
-    close_price,
-    sell_listings,
-    change_pct
+    item_id::integer,
+    bucket::timestamptz,
+    open_price::integer,
+    close_price::integer,
+    sell_listings::integer,
+    change_pct::float
 FROM price_changes_24h
 WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
   AND item_id = ANY(sqlc.arg(item_ids)::int[])

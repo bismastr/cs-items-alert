@@ -25,7 +25,7 @@ func NewRouter(priceHandler *price.PriceHandler) *chi.Mux {
 	})
 
 	r.Route("/api", func(r chi.Router) {
-
+		r.Get("/price-changes/search", priceHandler.GetSearchPriceChanges)
 	})
 
 	return r

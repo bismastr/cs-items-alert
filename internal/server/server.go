@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/bismastr/cs-price-alert/internal/config"
@@ -19,30 +20,32 @@ type Server struct {
 	db         *db.Db
 }
 
-func NewServer(config config.Config, db *db.Db) (*Server, error) {
+func NewServer(config *config.Config, db *db.Db) (*Server, error) {
 	timescaleRepo := timescale_repository.New(db.TimescalePool)
 	postgresRepo := repository.New(db.PostgresPool)
-	price.NewPriceService(timescaleRepo, postgresRepo)
-
-	r := chi.NewRouter()
+	priceService := price.NewPriceService(timescaleRepo, postgresRepo)
+	priceHandler := price.NewPriceHandler(priceService)
+	router := NewRouter(priceHandler)
 
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf(":%s", config.Server.Port),
-		Handler: r,
+		Handler: router,
 	}
 
 	return &Server{
 		httpServer: httpServer,
-		router:     r,
+		router:     router,
 		db:         db,
 	}, nil
 }
 
 func (s *Server) Start() error {
+	log.Printf("Started on port %s", s.httpServer.Addr)
 	err := s.httpServer.ListenAndServe()
 	if err != nil {
 		return fmt.Errorf("server failed to start: %w", err)
 	}
+
 	return err
 }
 
