@@ -39,6 +39,19 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, e
 	return i, err
 }
 
+const getAllItemsCount = `-- name: GetAllItemsCount :one
+SELECT 
+    COUNT(*) as count
+FROM items
+`
+
+func (q *Queries) GetAllItemsCount(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, getAllItemsCount)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getItemByHashName = `-- name: GetItemByHashName :one
 SELECT
     id,
@@ -149,6 +162,7 @@ SELECT
     name,
     sim_score
 FROM score
+WHERE sim_score > 0.1
 ORDER BY sim_score DESC
 LIMIT $1 OFFSET $2
 `
@@ -183,4 +197,23 @@ func (q *Queries) SearchItemsByName(ctx context.Context, arg SearchItemsByNamePa
 		return nil, err
 	}
 	return items, nil
+}
+
+const searchItemsCount = `-- name: SearchItemsCount :one
+WITH score AS (
+    SELECT 
+        similarity(name, $1) AS sim_score
+    FROM items
+)
+SELECT 
+    COUNT(*) as count
+FROM score
+WHERE sim_score > 0.1
+`
+
+func (q *Queries) SearchItemsCount(ctx context.Context, name string) (int64, error) {
+	row := q.db.QueryRow(ctx, searchItemsCount, name)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }

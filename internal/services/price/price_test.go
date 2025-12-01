@@ -28,6 +28,16 @@ func (m *MockPostgresRepo) SearchItemsByName(ctx context.Context, arg repository
 	return args.Get(0).([]repository.SearchItemsByNameRow), args.Error(1)
 }
 
+func (m *MockPostgresRepo) SearchItemsCount(ctx context.Context, name string) (int64, error) {
+	args := m.Called(ctx, name)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockPostgresRepo) GetAllItemsCount(ctx context.Context) (int64, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 func (m *MockTimescaleRepo) Get24HourPricesChanges(ctx context.Context) ([]timescale_repository.Get24HourPricesChangesRow, error) {
 	args := m.Called(ctx)
 	return args.Get(0).([]timescale_repository.Get24HourPricesChangesRow), args.Error(1)
@@ -171,9 +181,11 @@ func TestSearchPriceChanges_Success(t *testing.T) {
 		{ItemID: 2, OpenPrice: 1000, ClosePrice: 800, ChangePct: -20.0},
 	}, nil)
 
+	mockPostgresRepo.On("SearchItemsCount", mock.Anything, "item").Return(int64(2), nil)
+
 	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
 
-	result, err := service.GetSearchPriceChanges(ctx, PriceChangeQueryParams{
+	result, totalCount, err := service.GetSearchPriceChanges(ctx, PriceChangeQueryParams{
 		Limit: 10,
 		Query: "item",
 	})
@@ -182,6 +194,7 @@ func TestSearchPriceChanges_Success(t *testing.T) {
 	assert.Len(t, result, 2)
 	assert.EqualValues(t, 20.0, result[0].ChangePct)
 	assert.EqualValues(t, -20.0, result[1].ChangePct)
+	assert.EqualValues(t, 2, totalCount)
 
 	mockPostgresRepo.AssertExpectations(t)
 	mockTimescaleRepo.AssertExpectations(t)

@@ -22,7 +22,7 @@ func (h *PriceHandler) GetSearchPriceChanges(w http.ResponseWriter, r *http.Requ
 	limit := utils.GetQueryInt(r, "limit", 16)
 	offset := (page - 1) * limit
 
-	searchResult, err := h.priceService.GetSearchPriceChanges(r.Context(), PriceChangeQueryParams{
+	searchResult, totalCount, err := h.priceService.GetSearchPriceChanges(r.Context(), PriceChangeQueryParams{
 		Query:  r.URL.Query().Get("query"),
 		Limit:  limit,
 		Offset: offset,
@@ -34,5 +34,8 @@ func (h *PriceHandler) GetSearchPriceChanges(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	response.Success(w, searchResult)
+	response.Success(w, map[string]interface{}{
+		"total": totalCount,
+		"items": searchResult,
+	})
 }

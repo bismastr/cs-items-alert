@@ -16,7 +16,9 @@ type TimescaleRepository interface {
 
 type PostgresRepository interface {
 	GetItemByID(ctx context.Context, ids []int32) ([]repository.Item, error)
+	GetAllItemsCount(ctx context.Context) (int64, error)
 	SearchItemsByName(ctx context.Context, arg repository.SearchItemsByNameParams) ([]repository.SearchItemsByNameRow, error)
+	SearchItemsCount(ctx context.Context, name string) (int64, error)
 }
 
 type PriceService struct {
@@ -25,11 +27,11 @@ type PriceService struct {
 }
 
 type GetPriceChange24HourResults struct {
-	ItemId          int32
-	ChangePct       float64
-	Name            string
-	OldSellPrice    int32
-	LatestSellPrice int32
+	ItemId          int32   `json:"item_id"`
+	ChangePct       float64 `json:"change_pct"`
+	Name            string  `json:"name"`
+	OldSellPrice    int32   `json:"old_sell_price"`
+	LatestSellPrice int32   `json:"latest_sell_price"`
 }
 
 type InsertPriceParams struct {
@@ -118,7 +120,7 @@ type PriceChangeQueryParams struct {
 	Offset int32
 }
 
-func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceChangeQueryParams) ([]GetPriceChange24HourResults, error) {
+func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceChangeQueryParams) ([]GetPriceChange24HourResults, int, error) {
 
 	if params.Query == "" {
 		priceChanges, err := s.timescaleRepo.GetAllPriceChanges(ctx, timescale_repository.GetAllPriceChangesParams{
@@ -126,7 +128,12 @@ func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceCh
 			Offset: params.Offset,
 		})
 		if err != nil {
-			return nil, err
+			return nil, 0, err
+		}
+
+		itemsCount, err := s.postgresRepo.GetAllItemsCount(ctx)
+		if err != nil {
+			return nil, 0, err
 		}
 
 		var itemsId []int32
@@ -136,7 +143,7 @@ func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceCh
 
 		items, err := s.postgresRepo.GetItemByID(ctx, itemsId)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		var result []GetPriceChange24HourResults
@@ -150,7 +157,7 @@ func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceCh
 			})
 		}
 
-		return result, nil
+		return result, int(itemsCount), nil
 	}
 
 	items, err := s.postgresRepo.SearchItemsByName(ctx,
@@ -161,7 +168,12 @@ func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceCh
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	itemsCount, err := s.postgresRepo.SearchItemsCount(ctx, params.Query)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	itemsId := make([]int32, 0, len(items))
@@ -174,7 +186,7 @@ func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceCh
 		MaxResults: params.Limit,
 	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	var result []GetPriceChange24HourResults
@@ -188,7 +200,7 @@ func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceCh
 		})
 	}
 
-	return result, nil
+	return result, int(itemsCount), nil
 }
 
 func (s *PriceService) FormatPrice(cents int32) float64 {

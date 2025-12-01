@@ -51,6 +51,23 @@ SELECT
     name,
     sim_score
 FROM score
+WHERE sim_score > 0.1
 ORDER BY sim_score DESC
 LIMIT $1 OFFSET $2;
+
+-- name: SearchItemsCount :one
+WITH score AS (
+    SELECT 
+        similarity(name, sqlc.arg(name)) AS sim_score
+    FROM items
+)
+SELECT 
+    COUNT(*) as count
+FROM score
+WHERE sim_score > 0.1;
+
+-- name: GetAllItemsCount :one
+SELECT 
+    COUNT(*) as count
+FROM items;
 
