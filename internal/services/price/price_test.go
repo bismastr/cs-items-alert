@@ -199,3 +199,43 @@ func TestSearchPriceChanges_Success(t *testing.T) {
 	mockPostgresRepo.AssertExpectations(t)
 	mockTimescaleRepo.AssertExpectations(t)
 }
+
+func TestSearchPriceChangesWithoutQuery_Success(t *testing.T) {
+	ctx := context.Background()
+
+	mockTimescaleRepo := new(MockTimescaleRepo)
+	mockPostgresRepo := new(MockPostgresRepo)
+
+	mockPostgresRepo.On("GetAllItemsCount", mock.Anything).Return(int64(2), nil)
+
+	priceChangesParams := timescale_repository.GetAllPriceChangesParams{
+		Limit:  2,
+		Offset: 0,
+	}
+
+	mockTimescaleRepo.On("GetAllPriceChanges", ctx, priceChangesParams).Return([]timescale_repository.GetAllPriceChangesRow{
+		{ItemID: 1, OpenPrice: 1000, ClosePrice: 1200, ChangePct: 20.0},
+		{ItemID: 2, OpenPrice: 1000, ClosePrice: 800, ChangePct: -20.0},
+	}, nil)
+
+	mockPostgresRepo.On("GetItemByID", mock.Anything, []int32{1, 2}).Return([]repository.Item{
+		{ID: 1, Name: "item1"},
+		{ID: 2, Name: "item2"},
+	}, nil)
+
+	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
+	result, totalCount, err := service.GetSearchPriceChanges(ctx, PriceChangeQueryParams{
+		Query:  "",
+		Limit:  2,
+		Offset: 0,
+	})
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.EqualValues(t, 20.0, result[0].ChangePct)
+	assert.EqualValues(t, -20.0, result[1].ChangePct)
+	assert.EqualValues(t, 2, totalCount)
+
+	mockPostgresRepo.AssertExpectations(t)
+	mockTimescaleRepo.AssertExpectations(t)
+}
