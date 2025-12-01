@@ -43,6 +43,11 @@ func (m *MockTimescaleRepo) GetPriceChangesByItemIDs(ctx context.Context, arg ti
 	return args.Get(0).([]timescale_repository.GetPriceChangesByItemIDsRow), args.Error(1)
 }
 
+func (m *MockTimescaleRepo) GetAllPriceChanges(ctx context.Context, arg timescale_repository.GetAllPriceChangesParams) ([]timescale_repository.GetAllPriceChangesRow, error) {
+	args := m.Called(ctx, arg)
+	return args.Get(0).([]timescale_repository.GetAllPriceChangesRow), args.Error(1)
+}
+
 func TestGetPriceChange24Hour_Success(t *testing.T) {
 	ctx := context.Background()
 
@@ -168,7 +173,7 @@ func TestSearchPriceChanges_Success(t *testing.T) {
 
 	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
 
-	result, err := service.GetSearchPriceChanges(ctx, GetSearchPriceChanggesParams{
+	result, err := service.GetSearchPriceChanges(ctx, PriceChangeQueryParams{
 		Limit: 10,
 		Query: "item",
 	})

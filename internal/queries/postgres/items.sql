@@ -51,7 +51,6 @@ SELECT
     name,
     sim_score
 FROM score
-WHERE sim_score > 0.1
 ORDER BY sim_score DESC
-LIMIT $1;
+LIMIT $1 OFFSET $2;
 

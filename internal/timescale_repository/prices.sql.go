@@ -62,6 +62,61 @@ func (q *Queries) Get24HourPricesChanges(ctx context.Context) ([]Get24HourPrices
 	return items, nil
 }
 
+const getAllPriceChanges = `-- name: GetAllPriceChanges :many
+SELECT 
+    item_id::integer,
+    bucket::timestamptz,
+    open_price::integer,
+    close_price::integer,
+    sell_listings::integer,
+    change_pct::float
+FROM price_changes_24h
+WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
+ORDER BY change_pct DESC
+LIMIT $1 OFFSET $2
+`
+
+type GetAllPriceChangesParams struct {
+	Limit  int32
+	Offset int32
+}
+
+type GetAllPriceChangesRow struct {
+	ItemID       int32
+	Bucket       pgtype.Timestamptz
+	OpenPrice    int32
+	ClosePrice   int32
+	SellListings int32
+	ChangePct    float64
+}
+
+func (q *Queries) GetAllPriceChanges(ctx context.Context, arg GetAllPriceChangesParams) ([]GetAllPriceChangesRow, error) {
+	rows, err := q.db.Query(ctx, getAllPriceChanges, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllPriceChangesRow
+	for rows.Next() {
+		var i GetAllPriceChangesRow
+		if err := rows.Scan(
+			&i.ItemID,
+			&i.Bucket,
+			&i.OpenPrice,
+			&i.ClosePrice,
+			&i.SellListings,
+			&i.ChangePct,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPriceChangesByItemIDs = `-- name: GetPriceChangesByItemIDs :many
 SELECT 
     item_id::integer,

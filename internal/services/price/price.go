@@ -11,6 +11,7 @@ type TimescaleRepository interface {
 	Get24HourPricesChanges(ctx context.Context) ([]timescale_repository.Get24HourPricesChangesRow, error)
 	InsertPrice(ctx context.Context, params timescale_repository.InsertPriceParams) error
 	GetPriceChangesByItemIDs(ctx context.Context, arg timescale_repository.GetPriceChangesByItemIDsParams) ([]timescale_repository.GetPriceChangesByItemIDsRow, error)
+	GetAllPriceChanges(ctx context.Context, arg timescale_repository.GetAllPriceChangesParams) ([]timescale_repository.GetAllPriceChangesRow, error)
 }
 
 type PostgresRepository interface {
@@ -111,16 +112,52 @@ func (s *PriceService) GetPriceChange24Hour(ctx context.Context) ([]GetPriceChan
 	return result, nil
 }
 
-type GetSearchPriceChanggesParams struct {
-	Query string
-	Limit int32
+type PriceChangeQueryParams struct {
+	Query  string
+	Limit  int32
+	Offset int32
 }
 
-func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params GetSearchPriceChanggesParams) ([]GetPriceChange24HourResults, error) {
+func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceChangeQueryParams) ([]GetPriceChange24HourResults, error) {
+
+	if params.Query == "" {
+		priceChanges, err := s.timescaleRepo.GetAllPriceChanges(ctx, timescale_repository.GetAllPriceChangesParams{
+			Limit:  params.Limit,
+			Offset: params.Offset,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		var itemsId []int32
+		for _, priceChange := range priceChanges {
+			itemsId = append(itemsId, priceChange.ItemID)
+		}
+
+		items, err := s.postgresRepo.GetItemByID(ctx, itemsId)
+		if err != nil {
+			return nil, err
+		}
+
+		var result []GetPriceChange24HourResults
+		for i := 0; i < len(priceChanges); i++ {
+			result = append(result, GetPriceChange24HourResults{
+				ItemId:          priceChanges[i].ItemID,
+				Name:            items[i].Name,
+				ChangePct:       priceChanges[i].ChangePct,
+				OldSellPrice:    priceChanges[i].OpenPrice,
+				LatestSellPrice: priceChanges[i].ClosePrice,
+			})
+		}
+
+		return result, nil
+	}
+
 	items, err := s.postgresRepo.SearchItemsByName(ctx,
 		repository.SearchItemsByNameParams{
-			Limit: params.Limit,
-			Name:  params.Query,
+			Limit:  params.Limit,
+			Name:   params.Query,
+			Offset: params.Offset,
 		},
 	)
 	if err != nil {

@@ -141,7 +141,7 @@ WITH score AS (
     SELECT 
         id,
         name, 
-        similarity(name, $2) AS sim_score
+        similarity(name, $3) AS sim_score
     FROM items
 )
 SELECT 
@@ -149,14 +149,14 @@ SELECT
     name,
     sim_score
 FROM score
-WHERE sim_score > 0.1
 ORDER BY sim_score DESC
-LIMIT $1
+LIMIT $1 OFFSET $2
 `
 
 type SearchItemsByNameParams struct {
-	Limit int32
-	Name  string
+	Limit  int32
+	Offset int32
+	Name   string
 }
 
 type SearchItemsByNameRow struct {
@@ -166,7 +166,7 @@ type SearchItemsByNameRow struct {
 }
 
 func (q *Queries) SearchItemsByName(ctx context.Context, arg SearchItemsByNameParams) ([]SearchItemsByNameRow, error) {
-	rows, err := q.db.Query(ctx, searchItemsByName, arg.Limit, arg.Name)
+	rows, err := q.db.Query(ctx, searchItemsByName, arg.Limit, arg.Offset, arg.Name)
 	if err != nil {
 		return nil, err
 	}
