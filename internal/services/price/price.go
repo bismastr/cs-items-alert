@@ -121,7 +121,6 @@ type PriceChangeQueryParams struct {
 }
 
 func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceChangeQueryParams) ([]GetPriceChange24HourResults, int, error) {
-
 	if params.Query == "" {
 		priceChanges, err := s.timescaleRepo.GetAllPriceChanges(ctx, timescale_repository.GetAllPriceChangesParams{
 			Limit:  params.Limit,
@@ -158,49 +157,49 @@ func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceCh
 		}
 
 		return result, int(itemsCount), nil
-	}
+	} else {
+		items, err := s.postgresRepo.SearchItemsByName(ctx,
+			repository.SearchItemsByNameParams{
+				Limit:  params.Limit,
+				Name:   params.Query,
+				Offset: params.Offset,
+			},
+		)
+		if err != nil {
+			return nil, 0, err
+		}
 
-	items, err := s.postgresRepo.SearchItemsByName(ctx,
-		repository.SearchItemsByNameParams{
-			Limit:  params.Limit,
-			Name:   params.Query,
-			Offset: params.Offset,
-		},
-	)
-	if err != nil {
-		return nil, 0, err
-	}
+		itemsCount, err := s.postgresRepo.SearchItemsCount(ctx, params.Query)
+		if err != nil {
+			return nil, 0, err
+		}
 
-	itemsCount, err := s.postgresRepo.SearchItemsCount(ctx, params.Query)
-	if err != nil {
-		return nil, 0, err
-	}
+		itemsId := make([]int32, 0, len(items))
+		for _, item := range items {
+			itemsId = append(itemsId, item.ID)
+		}
 
-	itemsId := make([]int32, 0, len(items))
-	for _, item := range items {
-		itemsId = append(itemsId, item.ID)
-	}
-
-	priceChanges, err := s.timescaleRepo.GetPriceChangesByItemIDs(ctx, timescale_repository.GetPriceChangesByItemIDsParams{
-		ItemIds:    itemsId,
-		MaxResults: params.Limit,
-	})
-	if err != nil {
-		return nil, 0, err
-	}
-
-	var result []GetPriceChange24HourResults
-	for i := 0; i < len(priceChanges); i++ {
-		result = append(result, GetPriceChange24HourResults{
-			ItemId:          priceChanges[i].ItemID,
-			Name:            items[i].Name,
-			ChangePct:       priceChanges[i].ChangePct,
-			OldSellPrice:    priceChanges[i].OpenPrice,
-			LatestSellPrice: priceChanges[i].ClosePrice,
+		priceChanges, err := s.timescaleRepo.GetPriceChangesByItemIDs(ctx, timescale_repository.GetPriceChangesByItemIDsParams{
+			ItemIds:    itemsId,
+			MaxResults: params.Limit,
 		})
-	}
+		if err != nil {
+			return nil, 0, err
+		}
 
-	return result, int(itemsCount), nil
+		var result []GetPriceChange24HourResults
+		for i := 0; i < len(priceChanges); i++ {
+			result = append(result, GetPriceChange24HourResults{
+				ItemId:          priceChanges[i].ItemID,
+				Name:            items[i].Name,
+				ChangePct:       priceChanges[i].ChangePct,
+				OldSellPrice:    priceChanges[i].OpenPrice,
+				LatestSellPrice: priceChanges[i].ClosePrice,
+			})
+		}
+
+		return result, int(itemsCount), nil
+	}
 }
 
 func (s *PriceService) FormatPrice(cents int32) float64 {
