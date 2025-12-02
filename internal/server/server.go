@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/bismastr/cs-price-alert/internal/config"
 	"github.com/bismastr/cs-price-alert/internal/db"
