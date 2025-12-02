@@ -2,7 +2,9 @@ package price
 
 import (
 	"context"
+	"log"
 	"sync"
+	"time"
 
 	"github.com/bismastr/cs-price-alert/internal/repository"
 	"github.com/bismastr/cs-price-alert/internal/timescale_repository"
@@ -130,15 +132,19 @@ func (s *PriceService) getEmptyQueryResults(ctx context.Context, params PriceCha
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
+		start := time.Now()
 		priceChanges, errPrice = s.timescaleRepo.GetAllPriceChanges(ctx, timescale_repository.GetAllPriceChangesParams{
 			Limit:  params.Limit,
 			Offset: params.Offset,
 		})
+		log.Printf("[getEmptyQueryResults] GetAllPriceChanges: %v", time.Since(start))
 	}()
 
 	go func() {
 		defer wg.Done()
+		start := time.Now()
 		itemsCount, errCount = s.postgresRepo.GetAllItemsCount(ctx)
+		log.Printf("[getEmptyQueryResults] GetAllItemsCount: %v", time.Since(start))
 	}()
 
 	wg.Wait()
@@ -156,7 +162,9 @@ func (s *PriceService) getEmptyQueryResults(ctx context.Context, params PriceCha
 		itemsId = append(itemsId, priceChange.ItemID)
 	}
 
+	start := time.Now()
 	items, err := s.postgresRepo.GetItemByID(ctx, itemsId)
+	log.Printf("[getEmptyQueryResults] GetItemByID: %v", time.Since(start))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -176,6 +184,7 @@ func (s *PriceService) getEmptyQueryResults(ctx context.Context, params PriceCha
 }
 
 func (s *PriceService) getSearchQueryResults(ctx context.Context, params PriceChangeQueryParams) ([]GetPriceChange24HourResults, int, error) {
+	start := time.Now()
 	items, err := s.postgresRepo.SearchItemsByName(ctx,
 		repository.SearchItemsByNameParams{
 			Limit:  params.Limit,
@@ -183,11 +192,14 @@ func (s *PriceService) getSearchQueryResults(ctx context.Context, params PriceCh
 			Offset: params.Offset,
 		},
 	)
+	log.Printf("[getSearchQueryResults] SearchItemsByName: %v", time.Since(start))
 	if err != nil {
 		return nil, 0, err
 	}
 
+	start = time.Now()
 	itemsCount, err := s.postgresRepo.SearchItemsCount(ctx, params.Query)
+	log.Printf("[getSearchQueryResults] SearchItemsCount: %v", time.Since(start))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -197,10 +209,12 @@ func (s *PriceService) getSearchQueryResults(ctx context.Context, params PriceCh
 		itemsId = append(itemsId, item.ID)
 	}
 
+	start = time.Now()
 	priceChanges, err := s.timescaleRepo.GetPriceChangesByItemIDs(ctx, timescale_repository.GetPriceChangesByItemIDsParams{
 		ItemIds:    itemsId,
 		MaxResults: params.Limit,
 	})
+	log.Printf("[getSearchQueryResults] GetPriceChangesByItemIDs: %v", time.Since(start))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -220,6 +234,11 @@ func (s *PriceService) getSearchQueryResults(ctx context.Context, params PriceCh
 }
 
 func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceChangeQueryParams) ([]GetPriceChange24HourResults, int, error) {
+	start := time.Now()
+	defer func() {
+		log.Printf("GetSearchPriceChanges total: %v", time.Since(start))
+	}()
+
 	if params.Query == "" {
 		return s.getEmptyQueryResults(ctx, params)
 	}
