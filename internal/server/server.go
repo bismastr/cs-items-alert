@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"time"
 
 	"github.com/bismastr/cs-price-alert/internal/config"
 	"github.com/bismastr/cs-price-alert/internal/db"
@@ -29,8 +30,13 @@ func NewServer(config *config.Config, db *db.Db) (*Server, error) {
 	router := NewRouter(priceHandler)
 
 	httpServer := &http.Server{
-		Addr:    fmt.Sprintf(":%s", config.Server.Port),
-		Handler: router,
+		Addr:              fmt.Sprintf(":%s", config.Server.Port),
+		Handler:           router,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second, // Keep connection alive for 60s
+		MaxHeaderBytes:    1 << 20,          // 1MB max header
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	return &Server{
