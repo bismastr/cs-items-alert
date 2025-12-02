@@ -20,6 +20,15 @@ func NewRouter(priceHandler *price.PriceHandler) *chi.Mux {
 		AllowCredentials: false,
 	}))
 
+	// Add Keep-Alive middleware
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Connection", "keep-alive")
+			w.Header().Set("Keep-Alive", "timeout=60, max=100")
+			next.ServeHTTP(w, r)
+		})
+	})
+
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		response.Success(w, map[string]string{"status": "ok"})
 	})
