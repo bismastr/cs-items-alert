@@ -64,12 +64,12 @@ func (q *Queries) Get24HourPricesChanges(ctx context.Context) ([]Get24HourPrices
 
 const getAllPriceChanges = `-- name: GetAllPriceChanges :many
 SELECT 
-    item_id::integer,
-    bucket::timestamptz,
-    open_price::integer,
-    close_price::integer,
-    sell_listings::integer,
-    change_pct::float
+        item_id::integer,
+        bucket::timestamptz,
+        open_price::integer,
+        close_price::integer,
+        sell_listings::integer,
+        change_pct::float
 FROM price_changes_24h
 WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
 ORDER BY change_pct DESC
@@ -154,6 +154,116 @@ func (q *Queries) GetPriceChangesByItemIDs(ctx context.Context, arg GetPriceChan
 	var items []GetPriceChangesByItemIDsRow
 	for rows.Next() {
 		var i GetPriceChangesByItemIDsRow
+		if err := rows.Scan(
+			&i.ItemID,
+			&i.Bucket,
+			&i.OpenPrice,
+			&i.ClosePrice,
+			&i.SellListings,
+			&i.ChangePct,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTopGainers = `-- name: GetTopGainers :many
+SELECT 
+        item_id::integer,
+        bucket::timestamptz,
+        open_price::integer,
+        close_price::integer,
+        sell_listings::integer,
+        change_pct::float
+FROM price_changes_24h
+WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
+ORDER BY change_pct DESC
+LIMIT $1 OFFSET $2
+`
+
+type GetTopGainersParams struct {
+	Limit  int32
+	Offset int32
+}
+
+type GetTopGainersRow struct {
+	ItemID       int32
+	Bucket       pgtype.Timestamptz
+	OpenPrice    int32
+	ClosePrice   int32
+	SellListings int32
+	ChangePct    float64
+}
+
+func (q *Queries) GetTopGainers(ctx context.Context, arg GetTopGainersParams) ([]GetTopGainersRow, error) {
+	rows, err := q.db.Query(ctx, getTopGainers, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTopGainersRow
+	for rows.Next() {
+		var i GetTopGainersRow
+		if err := rows.Scan(
+			&i.ItemID,
+			&i.Bucket,
+			&i.OpenPrice,
+			&i.ClosePrice,
+			&i.SellListings,
+			&i.ChangePct,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTopLosers = `-- name: GetTopLosers :many
+SELECT 
+        item_id::integer,
+        bucket::timestamptz,
+        open_price::integer,
+        close_price::integer,
+        sell_listings::integer,
+        change_pct::float
+FROM price_changes_24h
+WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
+ORDER BY change_pct ASC
+LIMIT $1 OFFSET $2
+`
+
+type GetTopLosersParams struct {
+	Limit  int32
+	Offset int32
+}
+
+type GetTopLosersRow struct {
+	ItemID       int32
+	Bucket       pgtype.Timestamptz
+	OpenPrice    int32
+	ClosePrice   int32
+	SellListings int32
+	ChangePct    float64
+}
+
+func (q *Queries) GetTopLosers(ctx context.Context, arg GetTopLosersParams) ([]GetTopLosersRow, error) {
+	rows, err := q.db.Query(ctx, getTopLosers, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTopLosersRow
+	for rows.Next() {
+		var i GetTopLosersRow
 		if err := rows.Scan(
 			&i.ItemID,
 			&i.Bucket,
