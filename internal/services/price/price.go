@@ -8,23 +8,9 @@ import (
 	"github.com/bismastr/cs-price-alert/internal/timescale_repository"
 )
 
-type TimescaleRepository interface {
-	Get24HourPricesChanges(ctx context.Context) ([]timescale_repository.Get24HourPricesChangesRow, error)
-	InsertPrice(ctx context.Context, params timescale_repository.InsertPriceParams) error
-	GetPriceChangesByItemIDs(ctx context.Context, arg timescale_repository.GetPriceChangesByItemIDsParams) ([]timescale_repository.GetPriceChangesByItemIDsRow, error)
-	GetAllPriceChanges(ctx context.Context, arg timescale_repository.GetAllPriceChangesParams) ([]timescale_repository.GetAllPriceChangesRow, error)
-}
-
-type PostgresRepository interface {
-	GetItemByID(ctx context.Context, ids []int32) ([]repository.Item, error)
-	GetAllItemsCount(ctx context.Context) (int64, error)
-	SearchItemsByName(ctx context.Context, arg repository.SearchItemsByNameParams) ([]repository.SearchItemsByNameRow, error)
-	SearchItemsCount(ctx context.Context, name string) (int64, error)
-}
-
 type PriceService struct {
-	timescaleRepo TimescaleRepository
-	postgresRepo  PostgresRepository
+	timescaleRepo timescale_repository.Repository
+	postgresRepo  repository.Repository
 }
 
 type GetPriceChange24HourResults struct {
@@ -46,18 +32,8 @@ type Service interface {
 	InsertPrice(ctx context.Context, params timescale_repository.InsertPriceParams) error
 }
 
-func NewPriceService(timescaleRepo TimescaleRepository,
-	postgresRepo PostgresRepository) *PriceService {
-	return &PriceService{
-		timescaleRepo: timescaleRepo,
-		postgresRepo:  postgresRepo,
-	}
-}
-
-func NewPriceServiceWithRepos(
-	timescaleRepo TimescaleRepository,
-	postgresRepo PostgresRepository,
-) *PriceService {
+func NewPriceService(timescaleRepo timescale_repository.Repository,
+	postgresRepo repository.Repository) *PriceService {
 	return &PriceService{
 		timescaleRepo: timescaleRepo,
 		postgresRepo:  postgresRepo,

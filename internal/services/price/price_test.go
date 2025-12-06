@@ -5,69 +5,23 @@ import (
 	"testing"
 
 	"github.com/bismastr/cs-price-alert/internal/repository"
+	postgres_mocks "github.com/bismastr/cs-price-alert/internal/repository/mocks"
 	"github.com/bismastr/cs-price-alert/internal/timescale_repository"
+	timescale_mocks "github.com/bismastr/cs-price-alert/internal/timescale_repository/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-type MockTimescaleRepo struct {
-	mock.Mock
-}
-
-type MockPostgresRepo struct {
-	mock.Mock
-}
-
-func (m *MockPostgresRepo) GetItemByID(ctx context.Context, ids []int32) ([]repository.Item, error) {
-	args := m.Called(ctx, ids)
-	return args.Get(0).([]repository.Item), args.Error(1)
-}
-
-func (m *MockPostgresRepo) SearchItemsByName(ctx context.Context, arg repository.SearchItemsByNameParams) ([]repository.SearchItemsByNameRow, error) {
-	args := m.Called(ctx, arg)
-	return args.Get(0).([]repository.SearchItemsByNameRow), args.Error(1)
-}
-
-func (m *MockPostgresRepo) SearchItemsCount(ctx context.Context, name string) (int64, error) {
-	args := m.Called(ctx, name)
-	return args.Get(0).(int64), args.Error(1)
-}
-
-func (m *MockPostgresRepo) GetAllItemsCount(ctx context.Context) (int64, error) {
-	args := m.Called(ctx)
-	return args.Get(0).(int64), args.Error(1)
-}
-
-func (m *MockTimescaleRepo) Get24HourPricesChanges(ctx context.Context) ([]timescale_repository.Get24HourPricesChangesRow, error) {
-	args := m.Called(ctx)
-	return args.Get(0).([]timescale_repository.Get24HourPricesChangesRow), args.Error(1)
-}
-
-func (m *MockTimescaleRepo) InsertPrice(ctx context.Context, params timescale_repository.InsertPriceParams) error {
-	args := m.Called(ctx, params)
-	return args.Error(0)
-}
-
-func (m *MockTimescaleRepo) GetPriceChangesByItemIDs(ctx context.Context, arg timescale_repository.GetPriceChangesByItemIDsParams) ([]timescale_repository.GetPriceChangesByItemIDsRow, error) {
-	args := m.Called(ctx, arg)
-	return args.Get(0).([]timescale_repository.GetPriceChangesByItemIDsRow), args.Error(1)
-}
-
-func (m *MockTimescaleRepo) GetAllPriceChanges(ctx context.Context, arg timescale_repository.GetAllPriceChangesParams) ([]timescale_repository.GetAllPriceChangesRow, error) {
-	args := m.Called(ctx, arg)
-	return args.Get(0).([]timescale_repository.GetAllPriceChangesRow), args.Error(1)
-}
-
 func TestGetPriceChange24Hour_Success(t *testing.T) {
 	ctx := context.Background()
 
-	mockTimescaleRepo := new(MockTimescaleRepo)
+	mockTimescaleRepo := new(timescale_mocks.MockRepository)
 	mockTimescaleRepo.On("Get24HourPricesChanges", mock.Anything).Return([]timescale_repository.Get24HourPricesChangesRow{
 		{ItemID: 1, LatestSellPrice: 1200, OldSellPrice: 1000},
 		{ItemID: 2, LatestSellPrice: 800, OldSellPrice: 1000},
 	}, nil)
 
-	mockPostgresRepo := new(MockPostgresRepo)
+	mockPostgresRepo := new(postgres_mocks.MockRepository)
 	mockPostgresRepo.On("GetItemByID", mock.Anything, []int32{1, 2}).Return([]repository.Item{
 		{ID: 1, HashName: "item1"},
 		{ID: 2, HashName: "item2"},
@@ -88,17 +42,14 @@ func TestGetPriceChange24Hour_Success(t *testing.T) {
 func TestGetPriceChange24Hour_Error(t *testing.T) {
 	ctx := context.Background()
 
-	mockRepo := new(MockTimescaleRepo)
+	mockRepo := new(timescale_mocks.MockRepository)
 	mockRepo.On("Get24HourPricesChanges", mock.Anything).Return(
 		[]timescale_repository.Get24HourPricesChangesRow(nil),
 		assert.AnError,
 	)
 
-	mockPostgresRepo := new(MockPostgresRepo)
-	mockPostgresRepo.On("GetItemByID", mock.Anything, []int32{1, 2}).Return([]repository.Item{
-		{ID: 1, HashName: "item1"},
-		{ID: 2, HashName: "item2"},
-	}, nil)
+	mockPostgresRepo := new(postgres_mocks.MockRepository)
+	// GetItemByID is not called if Get24HourPricesChanges fails
 
 	service := NewPriceService(mockRepo, mockPostgresRepo)
 
@@ -113,8 +64,8 @@ func TestGetPriceChange24Hour_Error(t *testing.T) {
 func TestInsertItem_Success(t *testing.T) {
 	ctx := context.Background()
 
-	mockRepo := new(MockTimescaleRepo)
-	mockPostgresRepo := new(MockPostgresRepo)
+	mockRepo := new(timescale_mocks.MockRepository)
+	mockPostgresRepo := new(postgres_mocks.MockRepository)
 	params := timescale_repository.InsertPriceParams{
 		ItemID:       1,
 		SellPrice:    100,
@@ -135,7 +86,7 @@ func TestInsertItem_Success(t *testing.T) {
 func TestInsertItem_Error(t *testing.T) {
 	ctx := context.Background()
 
-	mockRepo := new(MockTimescaleRepo)
+	mockRepo := new(timescale_mocks.MockRepository)
 	params := timescale_repository.InsertPriceParams{
 		ItemID:       1,
 		SellPrice:    100,
@@ -144,7 +95,7 @@ func TestInsertItem_Error(t *testing.T) {
 
 	mockRepo.On("InsertPrice", ctx, params).Return(assert.AnError)
 
-	mockPostgresRepo := new(MockPostgresRepo)
+	mockPostgresRepo := new(postgres_mocks.MockRepository)
 
 	service := NewPriceService(mockRepo, mockPostgresRepo)
 
@@ -158,8 +109,8 @@ func TestInsertItem_Error(t *testing.T) {
 func TestSearchPriceChanges_Success(t *testing.T) {
 	ctx := context.Background()
 
-	mockTimescaleRepo := new(MockTimescaleRepo)
-	mockPostgresRepo := new(MockPostgresRepo)
+	mockTimescaleRepo := new(timescale_mocks.MockRepository)
+	mockPostgresRepo := new(postgres_mocks.MockRepository)
 
 	searchParams := repository.SearchItemsByNameParams{
 		Limit: 10,
@@ -203,8 +154,8 @@ func TestSearchPriceChanges_Success(t *testing.T) {
 func TestSearchPriceChangesWithoutQuery_Success(t *testing.T) {
 	ctx := context.Background()
 
-	mockTimescaleRepo := new(MockTimescaleRepo)
-	mockPostgresRepo := new(MockPostgresRepo)
+	mockTimescaleRepo := new(timescale_mocks.MockRepository)
+	mockPostgresRepo := new(postgres_mocks.MockRepository)
 
 	mockPostgresRepo.On("GetAllItemsCount", mock.Anything).Return(int64(2), nil)
 
