@@ -168,11 +168,6 @@ func TestSearchPriceChangesWithoutQuery_Success(t *testing.T) {
 		{ItemID: 2, ItemName: "item2", OpenPrice: 1000, ClosePrice: 800, ChangePct: -20.0},
 	}, nil)
 
-	mockPostgresRepo.On("GetItemByID", mock.Anything, []int32{1, 2}).Return([]repository.Item{
-		{ID: 1, Name: "item1"},
-		{ID: 2, Name: "item2"},
-	}, nil)
-
 	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
 	result, totalCount, err := service.GetSearchPriceChanges(ctx, PriceChangeQueryParams{
 		Query:  "",

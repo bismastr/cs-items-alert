@@ -111,7 +111,7 @@ func (s *PriceService) getEmptyQueryResults(ctx context.Context, params PriceCha
 
 	go func() {
 		defer wg.Done()
-		itemsCount, errCount = s.timescaleRepo.CountSearchPriceChangesByName(ctx, params.Query)
+		itemsCount, errCount = s.postgresRepo.GetAllItemsCount(ctx)
 	}()
 
 	wg.Wait()
