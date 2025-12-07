@@ -2,8 +2,9 @@
 INSERT INTO prices (
     item_id,
     sell_price,
-    sell_listings
-) VALUES ($1, $2, $3);
+    sell_listings,
+    item_name
+) VALUES ($1, $2, $3, $4);
 
 -- name: Get24HourPricesChanges :many
 WITH latest_sell_price AS (

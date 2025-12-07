@@ -12,6 +12,7 @@ import (
 	"github.com/bismastr/cs-price-alert/internal/steam"
 	"github.com/bismastr/cs-price-alert/internal/timescale_repository"
 	"github.com/gocolly/colly"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Scrapper struct {
@@ -61,6 +62,7 @@ func (s *Scrapper) setupHandlers() {
 			err = s.timescale_repo.InsertPrice(ctx,
 				timescale_repository.InsertPriceParams{
 					ItemID:       createdItem.ID,
+					ItemName:     pgtype.Text{String: item.Name, Valid: true},
 					SellPrice:    int32(item.SellPrice),
 					SellListings: int32(item.SellListings),
 				},

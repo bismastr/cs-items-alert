@@ -286,17 +286,24 @@ const insertPrice = `-- name: InsertPrice :exec
 INSERT INTO prices (
     item_id,
     sell_price,
-    sell_listings
-) VALUES ($1, $2, $3)
+    sell_listings,
+    item_name
+) VALUES ($1, $2, $3, $4)
 `
 
 type InsertPriceParams struct {
 	ItemID       int32
 	SellPrice    int32
 	SellListings int32
+	ItemName     pgtype.Text
 }
 
 func (q *Queries) InsertPrice(ctx context.Context, arg InsertPriceParams) error {
-	_, err := q.db.Exec(ctx, insertPrice, arg.ItemID, arg.SellPrice, arg.SellListings)
+	_, err := q.db.Exec(ctx, insertPrice,
+		arg.ItemID,
+		arg.SellPrice,
+		arg.SellListings,
+		arg.ItemName,
+	)
 	return err
 }

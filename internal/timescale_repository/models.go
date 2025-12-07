@@ -14,6 +14,7 @@ type Price struct {
 	SellPrice    int32
 	SellListings int32
 	Time         pgtype.Timestamptz
+	ItemName     pgtype.Text
 }
 
 type PriceChanges24h struct {
