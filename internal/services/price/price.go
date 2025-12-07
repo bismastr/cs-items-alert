@@ -105,12 +105,13 @@ func (s *PriceService) getEmptyQueryResults(ctx context.Context, params PriceCha
 		priceChanges, errPrice = s.timescaleRepo.GetAllPriceChanges(ctx, timescale_repository.GetAllPriceChangesParams{
 			Limit:  params.Limit,
 			Offset: params.Offset,
+			SortBy: params.SortBy,
 		})
 	}()
 
 	go func() {
 		defer wg.Done()
-		itemsCount, errCount = s.postgresRepo.GetAllItemsCount(ctx)
+		itemsCount, errCount = s.timescaleRepo.CountSearchPriceChangesByName(ctx, params.Query)
 	}()
 
 	wg.Wait()
@@ -123,21 +124,11 @@ func (s *PriceService) getEmptyQueryResults(ctx context.Context, params PriceCha
 		return nil, 0, errCount
 	}
 
-	var itemsId []int32
-	for _, priceChange := range priceChanges {
-		itemsId = append(itemsId, priceChange.ItemID)
-	}
-
-	items, err := s.postgresRepo.GetItemByID(ctx, itemsId)
-	if err != nil {
-		return nil, 0, err
-	}
-
 	var result []GetPriceChange24HourResults
 	for i := 0; i < len(priceChanges); i++ {
 		result = append(result, GetPriceChange24HourResults{
 			ItemId:          priceChanges[i].ItemID,
-			Name:            items[i].Name,
+			Name:            priceChanges[i].ItemName,
 			ChangePct:       priceChanges[i].ChangePct,
 			OldSellPrice:    priceChanges[i].OpenPrice,
 			LatestSellPrice: priceChanges[i].ClosePrice,
