@@ -31,6 +31,7 @@ type PriceChangeQueryParams struct {
 	Query  string
 	Limit  int32
 	Offset int32
+	SortBy string
 }
 
 func NewPriceService(timescaleRepo timescale_repository.Repository,
@@ -147,49 +148,49 @@ func (s *PriceService) getEmptyQueryResults(ctx context.Context, params PriceCha
 }
 
 func (s *PriceService) getSearchQueryResults(ctx context.Context, params PriceChangeQueryParams) ([]GetPriceChange24HourResults, int, error) {
-	// Search items by name
-	items, err := s.postgresRepo.SearchItemsByName(ctx,
-		repository.SearchItemsByNameParams{
+	var wg sync.WaitGroup
+	var priceChanges []timescale_repository.SearchPriceChangesByNameRow
+	var totalCount int64
+	var errPrice, errCount error
+
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		priceChanges, errPrice = s.timescaleRepo.SearchPriceChangesByName(ctx, timescale_repository.SearchPriceChangesByNameParams{
 			Limit:  params.Limit,
-			Name:   params.Query,
 			Offset: params.Offset,
-		},
-	)
-	if err != nil {
-		return nil, 0, err
+			Query:  params.Query,
+			SortBy: params.SortBy,
+		})
+	}()
+
+	go func() {
+		defer wg.Done()
+		totalCount, errCount = s.timescaleRepo.CountSearchPriceChangesByName(ctx, params.Query)
+	}()
+
+	wg.Wait()
+
+	if errCount != nil {
+		return nil, 0, errCount
 	}
 
-	// Search items count
-	itemsCount, err := s.postgresRepo.SearchItemsCount(ctx, params.Query)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	itemsId := make([]int32, 0, len(items))
-	for _, item := range items {
-		itemsId = append(itemsId, item.ID)
-	}
-
-	priceChanges, err := s.timescaleRepo.GetPriceChangesByItemIDs(ctx, timescale_repository.GetPriceChangesByItemIDsParams{
-		ItemIds:    itemsId,
-		MaxResults: params.Limit,
-	})
-	if err != nil {
-		return nil, 0, err
+	if errPrice != nil {
+		return nil, 0, errPrice
 	}
 
 	var result []GetPriceChange24HourResults
 	for i := 0; i < len(priceChanges); i++ {
 		result = append(result, GetPriceChange24HourResults{
 			ItemId:          priceChanges[i].ItemID,
-			Name:            items[i].Name,
+			Name:            priceChanges[i].ItemName,
 			ChangePct:       priceChanges[i].ChangePct,
 			OldSellPrice:    priceChanges[i].OpenPrice,
 			LatestSellPrice: priceChanges[i].ClosePrice,
 		})
 	}
 
-	return result, int(itemsCount), nil
+	return result, int(totalCount), nil
 }
 
 func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceChangeQueryParams) ([]GetPriceChange24HourResults, int, error) {

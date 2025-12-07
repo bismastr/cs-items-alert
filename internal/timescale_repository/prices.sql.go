@@ -11,6 +11,21 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countSearchPriceChangesByName = `-- name: CountSearchPriceChangesByName :one
+SELECT 
+    COUNT(*) as count
+FROM price_changes_24h
+WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
+    AND similarity(item_name, $1) > 0.3
+`
+
+func (q *Queries) CountSearchPriceChangesByName(ctx context.Context, query string) (int64, error) {
+	row := q.db.QueryRow(ctx, countSearchPriceChangesByName, query)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const get24HourPricesChanges = `-- name: Get24HourPricesChanges :many
 WITH latest_sell_price AS (
     SELECT DISTINCT ON (item_id)
@@ -65,6 +80,7 @@ func (q *Queries) Get24HourPricesChanges(ctx context.Context) ([]Get24HourPrices
 const getAllPriceChanges = `-- name: GetAllPriceChanges :many
 SELECT 
         item_id::integer,
+        item_name::text,
         bucket::timestamptz,
         open_price::integer,
         close_price::integer,
@@ -72,17 +88,22 @@ SELECT
         change_pct::float
 FROM price_changes_24h
 WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
-ORDER BY change_pct DESC
+ORDER BY 
+    CASE WHEN $3::text = 'gainers' THEN change_pct END DESC,
+    CASE WHEN $3::text = 'losers' THEN change_pct END ASC,
+    change_pct DESC
 LIMIT $1 OFFSET $2
 `
 
 type GetAllPriceChangesParams struct {
 	Limit  int32
 	Offset int32
+	SortBy string
 }
 
 type GetAllPriceChangesRow struct {
 	ItemID       int32
+	ItemName     string
 	Bucket       pgtype.Timestamptz
 	OpenPrice    int32
 	ClosePrice   int32
@@ -91,7 +112,7 @@ type GetAllPriceChangesRow struct {
 }
 
 func (q *Queries) GetAllPriceChanges(ctx context.Context, arg GetAllPriceChangesParams) ([]GetAllPriceChangesRow, error) {
-	rows, err := q.db.Query(ctx, getAllPriceChanges, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, getAllPriceChanges, arg.Limit, arg.Offset, arg.SortBy)
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +122,7 @@ func (q *Queries) GetAllPriceChanges(ctx context.Context, arg GetAllPriceChanges
 		var i GetAllPriceChangesRow
 		if err := rows.Scan(
 			&i.ItemID,
+			&i.ItemName,
 			&i.Bucket,
 			&i.OpenPrice,
 			&i.ClosePrice,
@@ -120,6 +142,7 @@ func (q *Queries) GetAllPriceChanges(ctx context.Context, arg GetAllPriceChanges
 const getPriceChangesByItemIDs = `-- name: GetPriceChangesByItemIDs :many
 SELECT 
     item_id::integer,
+      item_name::text,
     bucket::timestamptz,
     open_price::integer,
     close_price::integer,
@@ -138,6 +161,7 @@ type GetPriceChangesByItemIDsParams struct {
 
 type GetPriceChangesByItemIDsRow struct {
 	ItemID       int32
+	ItemName     string
 	Bucket       pgtype.Timestamptz
 	OpenPrice    int32
 	ClosePrice   int32
@@ -156,116 +180,7 @@ func (q *Queries) GetPriceChangesByItemIDs(ctx context.Context, arg GetPriceChan
 		var i GetPriceChangesByItemIDsRow
 		if err := rows.Scan(
 			&i.ItemID,
-			&i.Bucket,
-			&i.OpenPrice,
-			&i.ClosePrice,
-			&i.SellListings,
-			&i.ChangePct,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getTopGainers = `-- name: GetTopGainers :many
-SELECT 
-        item_id::integer,
-        bucket::timestamptz,
-        open_price::integer,
-        close_price::integer,
-        sell_listings::integer,
-        change_pct::float
-FROM price_changes_24h
-WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
-ORDER BY change_pct DESC
-LIMIT $1 OFFSET $2
-`
-
-type GetTopGainersParams struct {
-	Limit  int32
-	Offset int32
-}
-
-type GetTopGainersRow struct {
-	ItemID       int32
-	Bucket       pgtype.Timestamptz
-	OpenPrice    int32
-	ClosePrice   int32
-	SellListings int32
-	ChangePct    float64
-}
-
-func (q *Queries) GetTopGainers(ctx context.Context, arg GetTopGainersParams) ([]GetTopGainersRow, error) {
-	rows, err := q.db.Query(ctx, getTopGainers, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetTopGainersRow
-	for rows.Next() {
-		var i GetTopGainersRow
-		if err := rows.Scan(
-			&i.ItemID,
-			&i.Bucket,
-			&i.OpenPrice,
-			&i.ClosePrice,
-			&i.SellListings,
-			&i.ChangePct,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getTopLosers = `-- name: GetTopLosers :many
-SELECT 
-        item_id::integer,
-        bucket::timestamptz,
-        open_price::integer,
-        close_price::integer,
-        sell_listings::integer,
-        change_pct::float
-FROM price_changes_24h
-WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
-ORDER BY change_pct ASC
-LIMIT $1 OFFSET $2
-`
-
-type GetTopLosersParams struct {
-	Limit  int32
-	Offset int32
-}
-
-type GetTopLosersRow struct {
-	ItemID       int32
-	Bucket       pgtype.Timestamptz
-	OpenPrice    int32
-	ClosePrice   int32
-	SellListings int32
-	ChangePct    float64
-}
-
-func (q *Queries) GetTopLosers(ctx context.Context, arg GetTopLosersParams) ([]GetTopLosersRow, error) {
-	rows, err := q.db.Query(ctx, getTopLosers, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetTopLosersRow
-	for rows.Next() {
-		var i GetTopLosersRow
-		if err := rows.Scan(
-			&i.ItemID,
+			&i.ItemName,
 			&i.Bucket,
 			&i.OpenPrice,
 			&i.ClosePrice,
@@ -306,4 +221,74 @@ func (q *Queries) InsertPrice(ctx context.Context, arg InsertPriceParams) error 
 		arg.ItemName,
 	)
 	return err
+}
+
+const searchPriceChangesByName = `-- name: SearchPriceChangesByName :many
+SELECT 
+    item_id::integer,
+    item_name::text,
+    bucket::timestamptz,
+    open_price::integer,
+    close_price::integer,
+    sell_listings::integer,
+    change_pct::float
+FROM price_changes_24h
+WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
+    AND similarity(item_name, $3) > 0.3
+ORDER BY 
+    CASE WHEN $4::text = 'gainers' THEN change_pct END DESC,
+    CASE WHEN $4::text = 'losers' THEN change_pct END ASC,
+    CASE WHEN $4::text = 'relevance' OR $4::text = '' THEN similarity(item_name, $3) END DESC,
+    change_pct DESC
+LIMIT $1 OFFSET $2
+`
+
+type SearchPriceChangesByNameParams struct {
+	Limit  int32
+	Offset int32
+	Query  string
+	SortBy string
+}
+
+type SearchPriceChangesByNameRow struct {
+	ItemID       int32
+	ItemName     string
+	Bucket       pgtype.Timestamptz
+	OpenPrice    int32
+	ClosePrice   int32
+	SellListings int32
+	ChangePct    float64
+}
+
+func (q *Queries) SearchPriceChangesByName(ctx context.Context, arg SearchPriceChangesByNameParams) ([]SearchPriceChangesByNameRow, error) {
+	rows, err := q.db.Query(ctx, searchPriceChangesByName,
+		arg.Limit,
+		arg.Offset,
+		arg.Query,
+		arg.SortBy,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchPriceChangesByNameRow
+	for rows.Next() {
+		var i SearchPriceChangesByNameRow
+		if err := rows.Scan(
+			&i.ItemID,
+			&i.ItemName,
+			&i.Bucket,
+			&i.OpenPrice,
+			&i.ClosePrice,
+			&i.SellListings,
+			&i.ChangePct,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

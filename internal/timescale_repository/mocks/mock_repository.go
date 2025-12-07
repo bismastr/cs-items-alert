@@ -38,6 +38,72 @@ func (_m *MockRepository) EXPECT() *MockRepository_Expecter {
 	return &MockRepository_Expecter{mock: &_m.Mock}
 }
 
+// CountSearchPriceChangesByName provides a mock function for the type MockRepository
+func (_mock *MockRepository) CountSearchPriceChangesByName(ctx context.Context, query string) (int64, error) {
+	ret := _mock.Called(ctx, query)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CountSearchPriceChangesByName")
+	}
+
+	var r0 int64
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (int64, error)); ok {
+		return returnFunc(ctx, query)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) int64); ok {
+		r0 = returnFunc(ctx, query)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, query)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_CountSearchPriceChangesByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CountSearchPriceChangesByName'
+type MockRepository_CountSearchPriceChangesByName_Call struct {
+	*mock.Call
+}
+
+// CountSearchPriceChangesByName is a helper method to define mock.On call
+//   - ctx context.Context
+//   - query string
+func (_e *MockRepository_Expecter) CountSearchPriceChangesByName(ctx interface{}, query interface{}) *MockRepository_CountSearchPriceChangesByName_Call {
+	return &MockRepository_CountSearchPriceChangesByName_Call{Call: _e.mock.On("CountSearchPriceChangesByName", ctx, query)}
+}
+
+func (_c *MockRepository_CountSearchPriceChangesByName_Call) Run(run func(ctx context.Context, query string)) *MockRepository_CountSearchPriceChangesByName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_CountSearchPriceChangesByName_Call) Return(n int64, err error) *MockRepository_CountSearchPriceChangesByName_Call {
+	_c.Call.Return(n, err)
+	return _c
+}
+
+func (_c *MockRepository_CountSearchPriceChangesByName_Call) RunAndReturn(run func(ctx context.Context, query string) (int64, error)) *MockRepository_CountSearchPriceChangesByName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Get24HourPricesChanges provides a mock function for the type MockRepository
 func (_mock *MockRepository) Get24HourPricesChanges(ctx context.Context) ([]timescale_repository.Get24HourPricesChangesRow, error) {
 	ret := _mock.Called(ctx)
@@ -289,6 +355,74 @@ func (_c *MockRepository_InsertPrice_Call) Return(err error) *MockRepository_Ins
 }
 
 func (_c *MockRepository_InsertPrice_Call) RunAndReturn(run func(ctx context.Context, params timescale_repository.InsertPriceParams) error) *MockRepository_InsertPrice_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SearchPriceChangesByName provides a mock function for the type MockRepository
+func (_mock *MockRepository) SearchPriceChangesByName(ctx context.Context, arg timescale_repository.SearchPriceChangesByNameParams) ([]timescale_repository.SearchPriceChangesByNameRow, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SearchPriceChangesByName")
+	}
+
+	var r0 []timescale_repository.SearchPriceChangesByNameRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, timescale_repository.SearchPriceChangesByNameParams) ([]timescale_repository.SearchPriceChangesByNameRow, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, timescale_repository.SearchPriceChangesByNameParams) []timescale_repository.SearchPriceChangesByNameRow); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]timescale_repository.SearchPriceChangesByNameRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, timescale_repository.SearchPriceChangesByNameParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_SearchPriceChangesByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SearchPriceChangesByName'
+type MockRepository_SearchPriceChangesByName_Call struct {
+	*mock.Call
+}
+
+// SearchPriceChangesByName is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg timescale_repository.SearchPriceChangesByNameParams
+func (_e *MockRepository_Expecter) SearchPriceChangesByName(ctx interface{}, arg interface{}) *MockRepository_SearchPriceChangesByName_Call {
+	return &MockRepository_SearchPriceChangesByName_Call{Call: _e.mock.On("SearchPriceChangesByName", ctx, arg)}
+}
+
+func (_c *MockRepository_SearchPriceChangesByName_Call) Run(run func(ctx context.Context, arg timescale_repository.SearchPriceChangesByNameParams)) *MockRepository_SearchPriceChangesByName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 timescale_repository.SearchPriceChangesByNameParams
+		if args[1] != nil {
+			arg1 = args[1].(timescale_repository.SearchPriceChangesByNameParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_SearchPriceChangesByName_Call) Return(searchPriceChangesByNameRows []timescale_repository.SearchPriceChangesByNameRow, err error) *MockRepository_SearchPriceChangesByName_Call {
+	_c.Call.Return(searchPriceChangesByNameRows, err)
+	return _c
+}
+
+func (_c *MockRepository_SearchPriceChangesByName_Call) RunAndReturn(run func(ctx context.Context, arg timescale_repository.SearchPriceChangesByNameParams) ([]timescale_repository.SearchPriceChangesByNameRow, error)) *MockRepository_SearchPriceChangesByName_Call {
 	_c.Call.Return(run)
 	return _c
 }

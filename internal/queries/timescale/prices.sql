@@ -33,6 +33,7 @@ JOIN old_sell_price o ON l.item_id = o.item_id;
 -- name: GetPriceChangesByItemIDs :many
 SELECT 
     item_id::integer,
+      item_name::text,
     bucket::timestamptz,
     open_price::integer,
     close_price::integer,
@@ -46,6 +47,7 @@ LIMIT sqlc.arg(max_results);
 -- name: GetAllPriceChanges :many
 SELECT 
         item_id::integer,
+        item_name::text,
         bucket::timestamptz,
         open_price::integer,
         close_price::integer,
@@ -53,31 +55,34 @@ SELECT
         change_pct::float
 FROM price_changes_24h
 WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
-ORDER BY change_pct DESC
+ORDER BY 
+    CASE WHEN sqlc.arg(sort_by)::text = 'gainers' THEN change_pct END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'losers' THEN change_pct END ASC,
+    change_pct DESC
 LIMIT $1 OFFSET $2;
 
--- name: GetTopGainers :many
+-- name: SearchPriceChangesByName :many
 SELECT 
-        item_id::integer,
-        bucket::timestamptz,
-        open_price::integer,
-        close_price::integer,
-        sell_listings::integer,
-        change_pct::float
+    item_id::integer,
+    item_name::text,
+    bucket::timestamptz,
+    open_price::integer,
+    close_price::integer,
+    sell_listings::integer,
+    change_pct::float
 FROM price_changes_24h
 WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
-ORDER BY change_pct DESC
+    AND similarity(item_name, sqlc.arg(query)) > 0.3
+ORDER BY 
+    CASE WHEN sqlc.arg(sort_by)::text = 'gainers' THEN change_pct END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'losers' THEN change_pct END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'relevance' OR sqlc.arg(sort_by)::text = '' THEN similarity(item_name, sqlc.arg(query)) END DESC,
+    change_pct DESC
 LIMIT $1 OFFSET $2;
 
--- name: GetTopLosers :many
+-- name: CountSearchPriceChangesByName :one
 SELECT 
-        item_id::integer,
-        bucket::timestamptz,
-        open_price::integer,
-        close_price::integer,
-        sell_listings::integer,
-        change_pct::float
+    COUNT(*) as count
 FROM price_changes_24h
 WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
-ORDER BY change_pct ASC
-LIMIT $1 OFFSET $2;
+    AND similarity(item_name, sqlc.arg(query)) > 0.3;

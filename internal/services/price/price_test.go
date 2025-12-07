@@ -8,6 +8,7 @@ import (
 	postgres_mocks "github.com/bismastr/cs-price-alert/internal/repository/mocks"
 	"github.com/bismastr/cs-price-alert/internal/timescale_repository"
 	timescale_mocks "github.com/bismastr/cs-price-alert/internal/timescale_repository/mocks"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -70,6 +71,7 @@ func TestInsertItem_Success(t *testing.T) {
 		ItemID:       1,
 		SellPrice:    100,
 		SellListings: 50,
+		ItemName:     pgtype.Text{String: "Test Item", Valid: true},
 	}
 
 	mockRepo.On("InsertPrice", ctx, params).Return(nil)
@@ -91,6 +93,7 @@ func TestInsertItem_Error(t *testing.T) {
 		ItemID:       1,
 		SellPrice:    100,
 		SellListings: 50,
+		ItemName:     pgtype.Text{String: "Test Item", Valid: true},
 	}
 
 	mockRepo.On("InsertPrice", ctx, params).Return(assert.AnError)
@@ -112,42 +115,37 @@ func TestSearchPriceChanges_Success(t *testing.T) {
 	mockTimescaleRepo := new(timescale_mocks.MockRepository)
 	mockPostgresRepo := new(postgres_mocks.MockRepository)
 
-	searchParams := repository.SearchItemsByNameParams{
-		Limit: 10,
-		Name:  "item",
+	searchParams := timescale_repository.SearchPriceChangesByNameParams{
+		Query:  "item",
+		SortBy: "",
+		Limit:  10,
+		Offset: 0,
 	}
 
-	mockPostgresRepo.On("SearchItemsByName", ctx, searchParams).Return([]repository.SearchItemsByNameRow{
-		{ID: 1, Name: "item1"},
-		{ID: 2, Name: "item2"},
+	mockTimescaleRepo.On("SearchPriceChangesByName", ctx, searchParams).Return([]timescale_repository.SearchPriceChangesByNameRow{
+		{ItemID: 1, ItemName: "item1", OpenPrice: 1000, ClosePrice: 1200, ChangePct: 20.0},
+		{ItemID: 2, ItemName: "item2", OpenPrice: 1000, ClosePrice: 800, ChangePct: -20.0},
 	}, nil)
 
-	priceChangesParams := timescale_repository.GetPriceChangesByItemIDsParams{
-		ItemIds:    []int32{1, 2},
-		MaxResults: 10,
-	}
-
-	mockTimescaleRepo.On("GetPriceChangesByItemIDs", ctx, priceChangesParams).Return([]timescale_repository.GetPriceChangesByItemIDsRow{
-		{ItemID: 1, OpenPrice: 1000, ClosePrice: 1200, ChangePct: 20.0},
-		{ItemID: 2, OpenPrice: 1000, ClosePrice: 800, ChangePct: -20.0},
-	}, nil)
-
-	mockPostgresRepo.On("SearchItemsCount", mock.Anything, "item").Return(int64(2), nil)
+	mockTimescaleRepo.On("CountSearchPriceChangesByName", ctx, "item").Return(int64(2), nil)
 
 	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
 
 	result, totalCount, err := service.GetSearchPriceChanges(ctx, PriceChangeQueryParams{
-		Limit: 10,
-		Query: "item",
+		Query:  "item",
+		SortBy: "",
+		Limit:  10,
+		Offset: 0,
 	})
 
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
+	assert.Equal(t, "item1", result[0].Name)
+	assert.Equal(t, "item2", result[1].Name)
 	assert.EqualValues(t, 20.0, result[0].ChangePct)
 	assert.EqualValues(t, -20.0, result[1].ChangePct)
 	assert.EqualValues(t, 2, totalCount)
 
-	mockPostgresRepo.AssertExpectations(t)
 	mockTimescaleRepo.AssertExpectations(t)
 }
 
@@ -160,13 +158,14 @@ func TestSearchPriceChangesWithoutQuery_Success(t *testing.T) {
 	mockPostgresRepo.On("GetAllItemsCount", mock.Anything).Return(int64(2), nil)
 
 	priceChangesParams := timescale_repository.GetAllPriceChangesParams{
+		SortBy: "",
 		Limit:  2,
 		Offset: 0,
 	}
 
 	mockTimescaleRepo.On("GetAllPriceChanges", ctx, priceChangesParams).Return([]timescale_repository.GetAllPriceChangesRow{
-		{ItemID: 1, OpenPrice: 1000, ClosePrice: 1200, ChangePct: 20.0},
-		{ItemID: 2, OpenPrice: 1000, ClosePrice: 800, ChangePct: -20.0},
+		{ItemID: 1, ItemName: "item1", OpenPrice: 1000, ClosePrice: 1200, ChangePct: 20.0},
+		{ItemID: 2, ItemName: "item2", OpenPrice: 1000, ClosePrice: 800, ChangePct: -20.0},
 	}, nil)
 
 	mockPostgresRepo.On("GetItemByID", mock.Anything, []int32{1, 2}).Return([]repository.Item{
@@ -177,12 +176,15 @@ func TestSearchPriceChangesWithoutQuery_Success(t *testing.T) {
 	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
 	result, totalCount, err := service.GetSearchPriceChanges(ctx, PriceChangeQueryParams{
 		Query:  "",
+		SortBy: "",
 		Limit:  2,
 		Offset: 0,
 	})
 
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
+	assert.Equal(t, "item1", result[0].Name)
+	assert.Equal(t, "item2", result[1].Name)
 	assert.EqualValues(t, 20.0, result[0].ChangePct)
 	assert.EqualValues(t, -20.0, result[1].ChangePct)
 	assert.EqualValues(t, 2, totalCount)

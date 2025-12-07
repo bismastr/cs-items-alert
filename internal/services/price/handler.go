@@ -24,6 +24,7 @@ func (h *PriceHandler) GetSearchPriceChanges(w http.ResponseWriter, r *http.Requ
 
 	searchResult, totalCount, err := h.priceService.GetSearchPriceChanges(r.Context(), PriceChangeQueryParams{
 		Query:  r.URL.Query().Get("query"),
+		SortBy: r.URL.Query().Get("sort_by"),
 		Limit:  limit,
 		Offset: offset,
 	})

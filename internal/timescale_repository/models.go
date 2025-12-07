@@ -20,6 +20,7 @@ type Price struct {
 type PriceChanges24h struct {
 	Bucket       interface{}
 	ItemID       int32
+	ItemName     pgtype.Text
 	OpenPrice    interface{}
 	ClosePrice   interface{}
 	SellListings interface{}
