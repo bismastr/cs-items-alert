@@ -27,9 +27,10 @@ type InsertPriceParams struct {
 	SellListings int32
 }
 
-type Service interface {
-	GetPriceChange24Hour(ctx context.Context) ([]GetPriceChange24HourResults, error)
-	InsertPrice(ctx context.Context, params timescale_repository.InsertPriceParams) error
+type PriceChangeQueryParams struct {
+	Query  string
+	Limit  int32
+	Offset int32
 }
 
 func NewPriceService(timescaleRepo timescale_repository.Repository,
@@ -91,12 +92,6 @@ func (s *PriceService) GetPriceChange24Hour(ctx context.Context) ([]GetPriceChan
 	return result, nil
 }
 
-type PriceChangeQueryParams struct {
-	Query  string
-	Limit  int32
-	Offset int32
-}
-
 func (s *PriceService) getEmptyQueryResults(ctx context.Context, params PriceChangeQueryParams) ([]GetPriceChange24HourResults, int, error) {
 	var wg sync.WaitGroup
 	var priceChanges []timescale_repository.GetAllPriceChangesRow
@@ -152,7 +147,7 @@ func (s *PriceService) getEmptyQueryResults(ctx context.Context, params PriceCha
 }
 
 func (s *PriceService) getSearchQueryResults(ctx context.Context, params PriceChangeQueryParams) ([]GetPriceChange24HourResults, int, error) {
-
+	// Search items by name
 	items, err := s.postgresRepo.SearchItemsByName(ctx,
 		repository.SearchItemsByNameParams{
 			Limit:  params.Limit,
@@ -160,13 +155,12 @@ func (s *PriceService) getSearchQueryResults(ctx context.Context, params PriceCh
 			Offset: params.Offset,
 		},
 	)
-
 	if err != nil {
 		return nil, 0, err
 	}
 
+	// Search items count
 	itemsCount, err := s.postgresRepo.SearchItemsCount(ctx, params.Query)
-
 	if err != nil {
 		return nil, 0, err
 	}
@@ -180,7 +174,6 @@ func (s *PriceService) getSearchQueryResults(ctx context.Context, params PriceCh
 		ItemIds:    itemsId,
 		MaxResults: params.Limit,
 	})
-
 	if err != nil {
 		return nil, 0, err
 	}
