@@ -14,6 +14,7 @@ type Item struct {
 	HashName  string
 	CreatedAt pgtype.Timestamptz
 	UpdatedAt pgtype.Timestamptz
+	IconUrl   pgtype.Text
 }
 
 type Price struct {

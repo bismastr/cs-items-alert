@@ -1,11 +1,13 @@
 -- name: CreateItem :one
 INSERT INTO items (
     name,
+    icon_url,
     hash_name
-) VALUES ($1, $2)
+) VALUES ($1, $2, $3)
 ON CONFLICT (hash_name) 
 DO UPDATE SET 
     name = EXCLUDED.name,
+    icon_url = EXCLUDED.icon_url,
     updated_at = NOW()
 RETURNING *;
 
@@ -16,6 +18,7 @@ SELECT
     hash_name,
     created_at,
     updated_at
+    icon_url
 FROM items
 WHERE hash_name = $1;
 
@@ -25,7 +28,8 @@ SELECT
     name,
     hash_name,
     created_at,
-    updated_at
+    updated_at,
+    icon_url
 FROM items;
 
 -- name: GetItemByID :many
@@ -34,7 +38,8 @@ SELECT
     name,
     hash_name,
     created_at,
-    updated_at
+    updated_at,
+    icon_url
 FROM items
 WHERE id = ANY(sqlc.arg(ids)::int[]);
 

@@ -7,27 +7,32 @@ package repository
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createItem = `-- name: CreateItem :one
 INSERT INTO items (
     name,
+    icon_url,
     hash_name
-) VALUES ($1, $2)
+) VALUES ($1, $2, $3)
 ON CONFLICT (hash_name) 
 DO UPDATE SET 
     name = EXCLUDED.name,
+    icon_url = EXCLUDED.icon_url,
     updated_at = NOW()
-RETURNING id, name, hash_name, created_at, updated_at
+RETURNING id, name, hash_name, created_at, updated_at, icon_url
 `
 
 type CreateItemParams struct {
 	Name     string
+	IconUrl  pgtype.Text
 	HashName string
 }
 
 func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, error) {
-	row := q.db.QueryRow(ctx, createItem, arg.Name, arg.HashName)
+	row := q.db.QueryRow(ctx, createItem, arg.Name, arg.IconUrl, arg.HashName)
 	var i Item
 	err := row.Scan(
 		&i.ID,
@@ -35,6 +40,7 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, e
 		&i.HashName,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IconUrl,
 	)
 	return i, err
 }
@@ -59,19 +65,28 @@ SELECT
     hash_name,
     created_at,
     updated_at
+    icon_url
 FROM items
 WHERE hash_name = $1
 `
 
-func (q *Queries) GetItemByHashName(ctx context.Context, hashName string) (Item, error) {
+type GetItemByHashNameRow struct {
+	ID        int32
+	Name      string
+	HashName  string
+	CreatedAt pgtype.Timestamptz
+	IconUrl   pgtype.Timestamptz
+}
+
+func (q *Queries) GetItemByHashName(ctx context.Context, hashName string) (GetItemByHashNameRow, error) {
 	row := q.db.QueryRow(ctx, getItemByHashName, hashName)
-	var i Item
+	var i GetItemByHashNameRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.HashName,
 		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.IconUrl,
 	)
 	return i, err
 }
@@ -82,7 +97,8 @@ SELECT
     name,
     hash_name,
     created_at,
-    updated_at
+    updated_at,
+    icon_url
 FROM items
 WHERE id = ANY($1::int[])
 `
@@ -102,6 +118,7 @@ func (q *Queries) GetItemByID(ctx context.Context, ids []int32) ([]Item, error) 
 			&i.HashName,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.IconUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -119,7 +136,8 @@ SELECT
     name,
     hash_name,
     created_at,
-    updated_at
+    updated_at,
+    icon_url
 FROM items
 `
 
@@ -138,6 +156,7 @@ func (q *Queries) GetItems(ctx context.Context) ([]Item, error) {
 			&i.HashName,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.IconUrl,
 		); err != nil {
 			return nil, err
 		}

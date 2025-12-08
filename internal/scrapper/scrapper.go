@@ -53,6 +53,7 @@ func (s *Scrapper) setupHandlers() {
 				repository.CreateItemParams{
 					Name:     item.Name,
 					HashName: item.HashName,
+					IconUrl:  pgtype.Text{String: item.AssetDescription.IconURL, Valid: true},
 				},
 			)
 			if err != nil {

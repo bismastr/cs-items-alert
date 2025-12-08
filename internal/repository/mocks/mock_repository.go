@@ -165,22 +165,22 @@ func (_c *MockRepository_GetAllItemsCount_Call) RunAndReturn(run func(ctx contex
 }
 
 // GetItemByHashName provides a mock function for the type MockRepository
-func (_mock *MockRepository) GetItemByHashName(ctx context.Context, hashName string) (repository.Item, error) {
+func (_mock *MockRepository) GetItemByHashName(ctx context.Context, hashName string) (repository.GetItemByHashNameRow, error) {
 	ret := _mock.Called(ctx, hashName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetItemByHashName")
 	}
 
-	var r0 repository.Item
+	var r0 repository.GetItemByHashNameRow
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (repository.Item, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (repository.GetItemByHashNameRow, error)); ok {
 		return returnFunc(ctx, hashName)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) repository.Item); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) repository.GetItemByHashNameRow); ok {
 		r0 = returnFunc(ctx, hashName)
 	} else {
-		r0 = ret.Get(0).(repository.Item)
+		r0 = ret.Get(0).(repository.GetItemByHashNameRow)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = returnFunc(ctx, hashName)
@@ -220,12 +220,12 @@ func (_c *MockRepository_GetItemByHashName_Call) Run(run func(ctx context.Contex
 	return _c
 }
 
-func (_c *MockRepository_GetItemByHashName_Call) Return(item repository.Item, err error) *MockRepository_GetItemByHashName_Call {
-	_c.Call.Return(item, err)
+func (_c *MockRepository_GetItemByHashName_Call) Return(getItemByHashNameRow repository.GetItemByHashNameRow, err error) *MockRepository_GetItemByHashName_Call {
+	_c.Call.Return(getItemByHashNameRow, err)
 	return _c
 }
 
-func (_c *MockRepository_GetItemByHashName_Call) RunAndReturn(run func(ctx context.Context, hashName string) (repository.Item, error)) *MockRepository_GetItemByHashName_Call {
+func (_c *MockRepository_GetItemByHashName_Call) RunAndReturn(run func(ctx context.Context, hashName string) (repository.GetItemByHashNameRow, error)) *MockRepository_GetItemByHashName_Call {
 	_c.Call.Return(run)
 	return _c
 }
