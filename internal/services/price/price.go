@@ -19,6 +19,7 @@ type GetPriceChange24HourResults struct {
 	Name            string  `json:"name"`
 	OldSellPrice    int32   `json:"old_sell_price"`
 	LatestSellPrice int32   `json:"latest_sell_price"`
+	IconUrl         string  `json:"icon_url"`
 }
 
 type InsertPriceParams struct {
@@ -87,6 +88,7 @@ func (s *PriceService) GetPriceChange24Hour(ctx context.Context) ([]GetPriceChan
 			Name:            item.Name,
 			OldSellPrice:    priceChange.OldSellPrice,
 			LatestSellPrice: priceChange.LatestSellPrice,
+			IconUrl:         item.IconUrl.String,
 		})
 	}
 
@@ -124,14 +126,35 @@ func (s *PriceService) getEmptyQueryResults(ctx context.Context, params PriceCha
 		return nil, 0, errCount
 	}
 
+	var itemIds []int32
+	for _, price := range priceChanges {
+		itemIds = append(itemIds, price.ItemID)
+	}
+
+	items, err := s.postgresRepo.GetItemByID(ctx, itemIds)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	itemMap := make(map[int32]repository.Item)
+	for _, item := range items {
+		itemMap[item.ID] = item
+	}
+
 	var result []GetPriceChange24HourResults
-	for i := 0; i < len(priceChanges); i++ {
+	for _, priceChange := range priceChanges {
+		item, exists := itemMap[priceChange.ItemID]
+		if !exists {
+			continue
+		}
+
 		result = append(result, GetPriceChange24HourResults{
-			ItemId:          priceChanges[i].ItemID,
-			Name:            priceChanges[i].ItemName,
-			ChangePct:       priceChanges[i].ChangePct,
-			OldSellPrice:    priceChanges[i].OpenPrice,
-			LatestSellPrice: priceChanges[i].ClosePrice,
+			ItemId:          item.ID,
+			Name:            item.Name,
+			ChangePct:       priceChange.ChangePct,
+			OldSellPrice:    priceChange.OpenPrice,
+			LatestSellPrice: priceChange.ClosePrice,
+			IconUrl:         item.IconUrl.String,
 		})
 	}
 
@@ -170,14 +193,35 @@ func (s *PriceService) getSearchQueryResults(ctx context.Context, params PriceCh
 		return nil, 0, errPrice
 	}
 
+	var itemIds []int32
+	for _, price := range priceChanges {
+		itemIds = append(itemIds, price.ItemID)
+	}
+
+	items, err := s.postgresRepo.GetItemByID(ctx, itemIds)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	itemMap := make(map[int32]repository.Item)
+	for _, item := range items {
+		itemMap[item.ID] = item
+	}
+
 	var result []GetPriceChange24HourResults
-	for i := 0; i < len(priceChanges); i++ {
+	for _, priceChange := range priceChanges {
+		item, exists := itemMap[priceChange.ItemID]
+		if !exists {
+			continue
+		}
+
 		result = append(result, GetPriceChange24HourResults{
-			ItemId:          priceChanges[i].ItemID,
-			Name:            priceChanges[i].ItemName,
-			ChangePct:       priceChanges[i].ChangePct,
-			OldSellPrice:    priceChanges[i].OpenPrice,
-			LatestSellPrice: priceChanges[i].ClosePrice,
+			ItemId:          item.ID,
+			Name:            item.Name,
+			ChangePct:       priceChange.ChangePct,
+			OldSellPrice:    priceChange.OpenPrice,
+			LatestSellPrice: priceChange.ClosePrice,
+			IconUrl:         item.IconUrl.String,
 		})
 	}
 
