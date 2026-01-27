@@ -129,6 +129,16 @@ func TestSearchPriceChanges_Success(t *testing.T) {
 
 	mockTimescaleRepo.On("CountSearchPriceChangesByName", ctx, "item").Return(int64(2), nil)
 
+	mockPostgresRepo.On("GetItemByID", ctx, []int32{1, 2}).Return([]repository.Item{
+		{ID: 1, Name: "item1", IconUrl: pgtype.Text{String: "icon1.png", Valid: true}},
+		{ID: 2, Name: "item2", IconUrl: pgtype.Text{String: "icon2.png", Valid: true}},
+	}, nil)
+
+	mockTimescaleRepo.On("GetItemSparklineWeekly", ctx, []int32{1, 2}).Return([]timescale_repository.GetItemSparklineWeeklyRow{
+		{ItemID: 1, Sparkline: []int32{1000, 1050, 1100, 1150, 1200}},
+		{ItemID: 2, Sparkline: []int32{1000, 950, 900, 850, 800}},
+	}, nil)
+
 	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
 
 	result, totalCount, err := service.GetSearchPriceChanges(ctx, PriceChangeQueryParams{
@@ -147,6 +157,7 @@ func TestSearchPriceChanges_Success(t *testing.T) {
 	assert.EqualValues(t, 2, totalCount)
 
 	mockTimescaleRepo.AssertExpectations(t)
+	mockPostgresRepo.AssertExpectations(t)
 }
 
 func TestSearchPriceChangesWithoutQuery_Success(t *testing.T) {
@@ -168,6 +179,16 @@ func TestSearchPriceChangesWithoutQuery_Success(t *testing.T) {
 		{ItemID: 2, ItemName: "item2", OpenPrice: 1000, ClosePrice: 800, ChangePct: -20.0},
 	}, nil)
 
+	mockPostgresRepo.On("GetItemByID", ctx, []int32{1, 2}).Return([]repository.Item{
+		{ID: 1, Name: "item1", IconUrl: pgtype.Text{String: "icon1.png", Valid: true}},
+		{ID: 2, Name: "item2", IconUrl: pgtype.Text{String: "icon2.png", Valid: true}},
+	}, nil)
+
+	mockTimescaleRepo.On("GetItemSparklineWeekly", ctx, []int32{1, 2}).Return([]timescale_repository.GetItemSparklineWeeklyRow{
+		{ItemID: 1, Sparkline: []int32{1000, 1050, 1100, 1150, 1200}},
+		{ItemID: 2, Sparkline: []int32{1000, 950, 900, 850, 800}},
+	}, nil)
+
 	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
 	result, totalCount, err := service.GetSearchPriceChanges(ctx, PriceChangeQueryParams{
 		Query:  "",
@@ -185,5 +206,124 @@ func TestSearchPriceChangesWithoutQuery_Success(t *testing.T) {
 	assert.EqualValues(t, 2, totalCount)
 
 	mockPostgresRepo.AssertExpectations(t)
+	mockTimescaleRepo.AssertExpectations(t)
+}
+
+func TestGetItemSparklineWeekly_Success(t *testing.T) {
+	ctx := context.Background()
+
+	mockTimescaleRepo := new(timescale_mocks.MockRepository)
+	mockPostgresRepo := new(postgres_mocks.MockRepository)
+
+	itemIds := []int32{1, 2, 3}
+	sparklineData := []timescale_repository.GetItemSparklineWeeklyRow{
+		{ItemID: 1, Sparkline: []int32{100, 110, 120, 115, 125, 130, 135}},
+		{ItemID: 2, Sparkline: []int32{200, 195, 190, 185, 180, 175, 170}},
+		{ItemID: 3, Sparkline: []int32{300, 310, 305, 315, 320, 325, 330}},
+	}
+
+	mockTimescaleRepo.On("GetItemSparklineWeekly", ctx, itemIds).Return(sparklineData, nil)
+
+	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
+
+	result, err := service.GetItemSparklineWeekly(ctx, itemIds)
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 3)
+	assert.Equal(t, []int32{100, 110, 120, 115, 125, 130, 135}, result[1])
+	assert.Equal(t, []int32{200, 195, 190, 185, 180, 175, 170}, result[2])
+	assert.Equal(t, []int32{300, 310, 305, 315, 320, 325, 330}, result[3])
+
+	mockTimescaleRepo.AssertExpectations(t)
+}
+
+func TestGetItemSparklineWeekly_Error(t *testing.T) {
+	ctx := context.Background()
+
+	mockTimescaleRepo := new(timescale_mocks.MockRepository)
+	mockPostgresRepo := new(postgres_mocks.MockRepository)
+
+	itemIds := []int32{1, 2}
+
+	mockTimescaleRepo.On("GetItemSparklineWeekly", ctx, itemIds).Return(
+		[]timescale_repository.GetItemSparklineWeeklyRow(nil),
+		assert.AnError,
+	)
+
+	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
+
+	result, err := service.GetItemSparklineWeekly(ctx, itemIds)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+
+	mockTimescaleRepo.AssertExpectations(t)
+}
+
+func TestGetItemSparklineWeekly_EmptyItemIds(t *testing.T) {
+	ctx := context.Background()
+
+	mockTimescaleRepo := new(timescale_mocks.MockRepository)
+	mockPostgresRepo := new(postgres_mocks.MockRepository)
+
+	itemIds := []int32{}
+
+	mockTimescaleRepo.On("GetItemSparklineWeekly", ctx, itemIds).Return([]timescale_repository.GetItemSparklineWeeklyRow{}, nil)
+
+	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
+
+	result, err := service.GetItemSparklineWeekly(ctx, itemIds)
+
+	assert.NoError(t, err)
+	assert.Empty(t, result)
+
+	mockTimescaleRepo.AssertExpectations(t)
+}
+
+func TestGetItemSparklineWeekly_SingleItem(t *testing.T) {
+	ctx := context.Background()
+
+	mockTimescaleRepo := new(timescale_mocks.MockRepository)
+	mockPostgresRepo := new(postgres_mocks.MockRepository)
+
+	itemIds := []int32{1}
+	sparklineData := []timescale_repository.GetItemSparklineWeeklyRow{
+		{ItemID: 1, Sparkline: []int32{1000, 1050, 1100, 1075, 1125, 1150, 1200}},
+	}
+
+	mockTimescaleRepo.On("GetItemSparklineWeekly", ctx, itemIds).Return(sparklineData, nil)
+
+	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
+
+	result, err := service.GetItemSparklineWeekly(ctx, itemIds)
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, []int32{1000, 1050, 1100, 1075, 1125, 1150, 1200}, result[1])
+
+	mockTimescaleRepo.AssertExpectations(t)
+}
+
+func TestGetItemSparklineWeekly_EmptySparkline(t *testing.T) {
+	ctx := context.Background()
+
+	mockTimescaleRepo := new(timescale_mocks.MockRepository)
+	mockPostgresRepo := new(postgres_mocks.MockRepository)
+
+	itemIds := []int32{1}
+	sparklineData := []timescale_repository.GetItemSparklineWeeklyRow{
+		{ItemID: 1, Sparkline: []int32{}},
+	}
+
+	mockTimescaleRepo.On("GetItemSparklineWeekly", ctx, itemIds).Return(sparklineData, nil)
+
+	service := NewPriceService(mockTimescaleRepo, mockPostgresRepo)
+
+	result, err := service.GetItemSparklineWeekly(ctx, itemIds)
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Empty(t, result[1])
+
 	mockTimescaleRepo.AssertExpectations(t)
 }

@@ -17,6 +17,15 @@ type Price struct {
 	ItemName     pgtype.Text
 }
 
+type PriceChanges1h struct {
+	Bucket       interface{}
+	ItemID       int32
+	OpenPrice    interface{}
+	ClosePrice   interface{}
+	SellListings interface{}
+	ChangePct    interface{}
+}
+
 type PriceChanges24h struct {
 	Bucket       interface{}
 	ItemID       int32

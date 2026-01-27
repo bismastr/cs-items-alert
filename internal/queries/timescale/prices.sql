@@ -86,3 +86,12 @@ SELECT
 FROM price_changes_24h
 WHERE bucket = DATE_TRUNC('day', NOW() - INTERVAL '1 day')
     AND similarity(item_name, sqlc.arg(query)) > 0.3;
+
+-- name: GetItemSparklineWeekly :many
+SELECT 
+    item_id::integer,
+    array_agg(close_price ORDER BY bucket ASC)::int[] AS sparkline
+FROM price_changes_1h
+WHERE item_id = ANY(sqlc.arg(item_id)::int[])
+  AND bucket >= NOW() - INTERVAL '7 days'
+GROUP BY item_id;

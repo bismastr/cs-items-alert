@@ -139,6 +139,41 @@ func (q *Queries) GetAllPriceChanges(ctx context.Context, arg GetAllPriceChanges
 	return items, nil
 }
 
+const getItemSparklineWeekly = `-- name: GetItemSparklineWeekly :many
+SELECT 
+    item_id::integer,
+    array_agg(close_price ORDER BY bucket ASC)::int[] AS sparkline
+FROM price_changes_1h
+WHERE item_id = ANY($1::int[])
+  AND bucket >= NOW() - INTERVAL '7 days'
+GROUP BY item_id
+`
+
+type GetItemSparklineWeeklyRow struct {
+	ItemID    int32
+	Sparkline []int32
+}
+
+func (q *Queries) GetItemSparklineWeekly(ctx context.Context, itemID []int32) ([]GetItemSparklineWeeklyRow, error) {
+	rows, err := q.db.Query(ctx, getItemSparklineWeekly, itemID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetItemSparklineWeeklyRow
+	for rows.Next() {
+		var i GetItemSparklineWeeklyRow
+		if err := rows.Scan(&i.ItemID, &i.Sparkline); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPriceChangesByItemIDs = `-- name: GetPriceChangesByItemIDs :many
 SELECT 
     item_id::integer,

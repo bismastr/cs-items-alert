@@ -20,6 +20,7 @@ type GetPriceChange24HourResults struct {
 	OldSellPrice    int32   `json:"old_sell_price"`
 	LatestSellPrice int32   `json:"latest_sell_price"`
 	IconUrl         string  `json:"icon_url"`
+	Sparkline       []int32 `json:"sparkline,omitempty"`
 }
 
 type InsertPriceParams struct {
@@ -141,6 +142,11 @@ func (s *PriceService) getEmptyQueryResults(ctx context.Context, params PriceCha
 		itemMap[item.ID] = item
 	}
 
+	sparklineMap, err := s.GetItemSparklineWeekly(ctx, itemIds)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	var result []GetPriceChange24HourResults
 	for _, priceChange := range priceChanges {
 		item, exists := itemMap[priceChange.ItemID]
@@ -155,6 +161,7 @@ func (s *PriceService) getEmptyQueryResults(ctx context.Context, params PriceCha
 			OldSellPrice:    priceChange.OpenPrice,
 			LatestSellPrice: priceChange.ClosePrice,
 			IconUrl:         item.IconUrl.String,
+			Sparkline:       sparklineMap[item.ID],
 		})
 	}
 
@@ -208,6 +215,11 @@ func (s *PriceService) getSearchQueryResults(ctx context.Context, params PriceCh
 		itemMap[item.ID] = item
 	}
 
+	sparklineMap, err := s.GetItemSparklineWeekly(ctx, itemIds)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	var result []GetPriceChange24HourResults
 	for _, priceChange := range priceChanges {
 		item, exists := itemMap[priceChange.ItemID]
@@ -222,6 +234,7 @@ func (s *PriceService) getSearchQueryResults(ctx context.Context, params PriceCh
 			OldSellPrice:    priceChange.OpenPrice,
 			LatestSellPrice: priceChange.ClosePrice,
 			IconUrl:         item.IconUrl.String,
+			Sparkline:       sparklineMap[item.ID],
 		})
 	}
 
@@ -233,6 +246,20 @@ func (s *PriceService) GetSearchPriceChanges(ctx context.Context, params PriceCh
 		return s.getEmptyQueryResults(ctx, params)
 	}
 	return s.getSearchQueryResults(ctx, params)
+}
+
+func (s *PriceService) GetItemSparklineWeekly(ctx context.Context, itemID []int32) (map[int32][]int32, error) {
+	sparklines, err := s.timescaleRepo.GetItemSparklineWeekly(ctx, itemID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[int32][]int32)
+	for _, sparkline := range sparklines {
+		result[sparkline.ItemID] = sparkline.Sparkline
+	}
+
+	return result, nil
 }
 
 func (s *PriceService) FormatPrice(cents int32) float64 {
