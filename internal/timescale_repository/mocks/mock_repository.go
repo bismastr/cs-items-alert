@@ -234,6 +234,142 @@ func (_c *MockRepository_GetAllPriceChanges_Call) RunAndReturn(run func(ctx cont
 	return _c
 }
 
+// GetItemPriceChartByDay provides a mock function for the type MockRepository
+func (_mock *MockRepository) GetItemPriceChartByDay(ctx context.Context, params timescale_repository.GetItemPriceChartByDayParams) ([]timescale_repository.GetItemPriceChartByDayRow, error) {
+	ret := _mock.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetItemPriceChartByDay")
+	}
+
+	var r0 []timescale_repository.GetItemPriceChartByDayRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, timescale_repository.GetItemPriceChartByDayParams) ([]timescale_repository.GetItemPriceChartByDayRow, error)); ok {
+		return returnFunc(ctx, params)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, timescale_repository.GetItemPriceChartByDayParams) []timescale_repository.GetItemPriceChartByDayRow); ok {
+		r0 = returnFunc(ctx, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]timescale_repository.GetItemPriceChartByDayRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, timescale_repository.GetItemPriceChartByDayParams) error); ok {
+		r1 = returnFunc(ctx, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_GetItemPriceChartByDay_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetItemPriceChartByDay'
+type MockRepository_GetItemPriceChartByDay_Call struct {
+	*mock.Call
+}
+
+// GetItemPriceChartByDay is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params timescale_repository.GetItemPriceChartByDayParams
+func (_e *MockRepository_Expecter) GetItemPriceChartByDay(ctx interface{}, params interface{}) *MockRepository_GetItemPriceChartByDay_Call {
+	return &MockRepository_GetItemPriceChartByDay_Call{Call: _e.mock.On("GetItemPriceChartByDay", ctx, params)}
+}
+
+func (_c *MockRepository_GetItemPriceChartByDay_Call) Run(run func(ctx context.Context, params timescale_repository.GetItemPriceChartByDayParams)) *MockRepository_GetItemPriceChartByDay_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 timescale_repository.GetItemPriceChartByDayParams
+		if args[1] != nil {
+			arg1 = args[1].(timescale_repository.GetItemPriceChartByDayParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_GetItemPriceChartByDay_Call) Return(getItemPriceChartByDayRows []timescale_repository.GetItemPriceChartByDayRow, err error) *MockRepository_GetItemPriceChartByDay_Call {
+	_c.Call.Return(getItemPriceChartByDayRows, err)
+	return _c
+}
+
+func (_c *MockRepository_GetItemPriceChartByDay_Call) RunAndReturn(run func(ctx context.Context, params timescale_repository.GetItemPriceChartByDayParams) ([]timescale_repository.GetItemPriceChartByDayRow, error)) *MockRepository_GetItemPriceChartByDay_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetItemPriceChartByHour provides a mock function for the type MockRepository
+func (_mock *MockRepository) GetItemPriceChartByHour(ctx context.Context, params timescale_repository.GetItemPriceChartByHourParams) ([]timescale_repository.GetItemPriceChartByHourRow, error) {
+	ret := _mock.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetItemPriceChartByHour")
+	}
+
+	var r0 []timescale_repository.GetItemPriceChartByHourRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, timescale_repository.GetItemPriceChartByHourParams) ([]timescale_repository.GetItemPriceChartByHourRow, error)); ok {
+		return returnFunc(ctx, params)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, timescale_repository.GetItemPriceChartByHourParams) []timescale_repository.GetItemPriceChartByHourRow); ok {
+		r0 = returnFunc(ctx, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]timescale_repository.GetItemPriceChartByHourRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, timescale_repository.GetItemPriceChartByHourParams) error); ok {
+		r1 = returnFunc(ctx, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_GetItemPriceChartByHour_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetItemPriceChartByHour'
+type MockRepository_GetItemPriceChartByHour_Call struct {
+	*mock.Call
+}
+
+// GetItemPriceChartByHour is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params timescale_repository.GetItemPriceChartByHourParams
+func (_e *MockRepository_Expecter) GetItemPriceChartByHour(ctx interface{}, params interface{}) *MockRepository_GetItemPriceChartByHour_Call {
+	return &MockRepository_GetItemPriceChartByHour_Call{Call: _e.mock.On("GetItemPriceChartByHour", ctx, params)}
+}
+
+func (_c *MockRepository_GetItemPriceChartByHour_Call) Run(run func(ctx context.Context, params timescale_repository.GetItemPriceChartByHourParams)) *MockRepository_GetItemPriceChartByHour_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 timescale_repository.GetItemPriceChartByHourParams
+		if args[1] != nil {
+			arg1 = args[1].(timescale_repository.GetItemPriceChartByHourParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_GetItemPriceChartByHour_Call) Return(getItemPriceChartByHourRows []timescale_repository.GetItemPriceChartByHourRow, err error) *MockRepository_GetItemPriceChartByHour_Call {
+	_c.Call.Return(getItemPriceChartByHourRows, err)
+	return _c
+}
+
+func (_c *MockRepository_GetItemPriceChartByHour_Call) RunAndReturn(run func(ctx context.Context, params timescale_repository.GetItemPriceChartByHourParams) ([]timescale_repository.GetItemPriceChartByHourRow, error)) *MockRepository_GetItemPriceChartByHour_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetItemSparklineWeekly provides a mock function for the type MockRepository
 func (_mock *MockRepository) GetItemSparklineWeekly(ctx context.Context, itemID []int32) ([]timescale_repository.GetItemSparklineWeeklyRow, error) {
 	ret := _mock.Called(ctx, itemID)

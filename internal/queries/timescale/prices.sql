@@ -95,3 +95,27 @@ FROM price_changes_1h
 WHERE item_id = ANY(sqlc.arg(item_id)::int[])
   AND bucket >= NOW() - INTERVAL '7 days'
 GROUP BY item_id;
+
+-- name: GetItemPriceChartByDay :many
+SELECT 
+    bucket::timestamptz,
+    open_price::integer,
+    close_price::integer,
+    sell_listings::integer,
+    change_pct::float
+FROM price_changes_24h
+WHERE item_id = $1
+  AND bucket >= NOW() - $2::interval
+ORDER BY bucket ASC;
+
+-- name: GetItemPriceChartByHour :many
+SELECT 
+    bucket::timestamptz,
+    open_price::integer,
+    close_price::integer,
+    sell_listings::integer,
+    change_pct::float
+FROM price_changes_1h
+WHERE item_id = $1
+  AND bucket >= NOW() - $2::interval
+ORDER BY bucket ASC;
