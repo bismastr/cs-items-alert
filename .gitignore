@@ -25,3 +25,7 @@ go.work.sum
 .env
 
 .vscode
+
+#air
+.air.toml
+tmp/
