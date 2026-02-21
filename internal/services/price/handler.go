@@ -65,7 +65,5 @@ func (h *PriceHandler) GetItemPriceChart(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	response.Success(w, map[string]interface{}{
-		"data": chartData,
-	})
+	response.Success(w, chartData)
 }
