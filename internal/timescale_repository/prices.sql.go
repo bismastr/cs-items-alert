@@ -139,6 +139,110 @@ func (q *Queries) GetAllPriceChanges(ctx context.Context, arg GetAllPriceChanges
 	return items, nil
 }
 
+const getItemPriceChartByDay = `-- name: GetItemPriceChartByDay :many
+SELECT 
+    bucket::timestamptz,
+    open_price::integer,
+    close_price::integer,
+    sell_listings::integer,
+    change_pct::float
+FROM price_changes_24h
+WHERE item_id = $1
+  AND bucket >= NOW() - $2::text::interval
+ORDER BY bucket ASC
+`
+
+type GetItemPriceChartByDayParams struct {
+	ItemID   int32
+	Interval string
+}
+
+type GetItemPriceChartByDayRow struct {
+	Bucket       pgtype.Timestamptz
+	OpenPrice    int32
+	ClosePrice   int32
+	SellListings int32
+	ChangePct    float64
+}
+
+func (q *Queries) GetItemPriceChartByDay(ctx context.Context, arg GetItemPriceChartByDayParams) ([]GetItemPriceChartByDayRow, error) {
+	rows, err := q.db.Query(ctx, getItemPriceChartByDay, arg.ItemID, arg.Interval)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetItemPriceChartByDayRow
+	for rows.Next() {
+		var i GetItemPriceChartByDayRow
+		if err := rows.Scan(
+			&i.Bucket,
+			&i.OpenPrice,
+			&i.ClosePrice,
+			&i.SellListings,
+			&i.ChangePct,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getItemPriceChartByHour = `-- name: GetItemPriceChartByHour :many
+SELECT 
+    bucket::timestamptz,
+    open_price::integer,
+    close_price::integer,
+    sell_listings::integer,
+    change_pct::float
+FROM price_changes_1h
+WHERE item_id = $1
+  AND bucket >= NOW() - $2::text::interval
+ORDER BY bucket ASC
+`
+
+type GetItemPriceChartByHourParams struct {
+	ItemID   int32
+	Interval string
+}
+
+type GetItemPriceChartByHourRow struct {
+	Bucket       pgtype.Timestamptz
+	OpenPrice    int32
+	ClosePrice   int32
+	SellListings int32
+	ChangePct    float64
+}
+
+func (q *Queries) GetItemPriceChartByHour(ctx context.Context, arg GetItemPriceChartByHourParams) ([]GetItemPriceChartByHourRow, error) {
+	rows, err := q.db.Query(ctx, getItemPriceChartByHour, arg.ItemID, arg.Interval)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetItemPriceChartByHourRow
+	for rows.Next() {
+		var i GetItemPriceChartByHourRow
+		if err := rows.Scan(
+			&i.Bucket,
+			&i.OpenPrice,
+			&i.ClosePrice,
+			&i.SellListings,
+			&i.ChangePct,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getItemSparklineWeekly = `-- name: GetItemSparklineWeekly :many
 SELECT 
     item_id::integer,

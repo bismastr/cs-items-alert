@@ -40,3 +40,32 @@ func (h *PriceHandler) GetSearchPriceChanges(w http.ResponseWriter, r *http.Requ
 		"items": searchResult,
 	})
 }
+
+func (h *PriceHandler) GetItemPriceChart(w http.ResponseWriter, r *http.Request) {
+	itemID := utils.GetQueryInt(r, "item_id", 0)
+	if itemID == 0 {
+		response.Error(w, 400, "1002", "Invalid item ID", map[string]interface{}{
+			"error": "item_id is required",
+		})
+		return
+	}
+	interval := r.URL.Query().Get("interval")
+	if interval == "" {
+		response.Error(w, 400, "1003", "Invalid interval", map[string]interface{}{
+			"error": "interval is required",
+		})
+		return
+	}
+
+	chartData, err := h.priceService.GetItemPriceChart(r.Context(), itemID, ChartPeriod(interval))
+	if err != nil {
+		response.Error(w, 500, "1004", "Failed to get item price chart", map[string]interface{}{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	response.Success(w, map[string]interface{}{
+		"data": chartData,
+	})
+}
