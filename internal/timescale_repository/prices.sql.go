@@ -148,13 +148,13 @@ SELECT
     change_pct::float
 FROM price_changes_24h
 WHERE item_id = $1
-  AND bucket >= NOW() - $2::interval
+  AND bucket >= NOW() - $2::text::interval
 ORDER BY bucket ASC
 `
 
 type GetItemPriceChartByDayParams struct {
-	ItemID  int32
-	Column2 pgtype.Interval
+	ItemID   int32
+	Interval string
 }
 
 type GetItemPriceChartByDayRow struct {
@@ -166,7 +166,7 @@ type GetItemPriceChartByDayRow struct {
 }
 
 func (q *Queries) GetItemPriceChartByDay(ctx context.Context, arg GetItemPriceChartByDayParams) ([]GetItemPriceChartByDayRow, error) {
-	rows, err := q.db.Query(ctx, getItemPriceChartByDay, arg.ItemID, arg.Column2)
+	rows, err := q.db.Query(ctx, getItemPriceChartByDay, arg.ItemID, arg.Interval)
 	if err != nil {
 		return nil, err
 	}
@@ -200,13 +200,13 @@ SELECT
     change_pct::float
 FROM price_changes_1h
 WHERE item_id = $1
-  AND bucket >= NOW() - $2::interval
+  AND bucket >= NOW() - $2::text::interval
 ORDER BY bucket ASC
 `
 
 type GetItemPriceChartByHourParams struct {
-	ItemID  int32
-	Column2 pgtype.Interval
+	ItemID   int32
+	Interval string
 }
 
 type GetItemPriceChartByHourRow struct {
@@ -218,7 +218,7 @@ type GetItemPriceChartByHourRow struct {
 }
 
 func (q *Queries) GetItemPriceChartByHour(ctx context.Context, arg GetItemPriceChartByHourParams) ([]GetItemPriceChartByHourRow, error) {
-	rows, err := q.db.Query(ctx, getItemPriceChartByHour, arg.ItemID, arg.Column2)
+	rows, err := q.db.Query(ctx, getItemPriceChartByHour, arg.ItemID, arg.Interval)
 	if err != nil {
 		return nil, err
 	}

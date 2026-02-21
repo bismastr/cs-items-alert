@@ -105,7 +105,7 @@ SELECT
     change_pct::float
 FROM price_changes_24h
 WHERE item_id = $1
-  AND bucket >= NOW() - $2::interval
+  AND bucket >= NOW() - sqlc.arg(interval)::text::interval
 ORDER BY bucket ASC;
 
 -- name: GetItemPriceChartByHour :many
@@ -117,5 +117,5 @@ SELECT
     change_pct::float
 FROM price_changes_1h
 WHERE item_id = $1
-  AND bucket >= NOW() - $2::interval
+  AND bucket >= NOW() - sqlc.arg(interval)::text::interval
 ORDER BY bucket ASC;
