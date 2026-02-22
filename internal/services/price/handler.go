@@ -67,3 +67,23 @@ func (h *PriceHandler) GetItemPriceChart(w http.ResponseWriter, r *http.Request)
 
 	response.Success(w, chartData)
 }
+
+func (h *PriceHandler) GetItemPriceStats(w http.ResponseWriter, r *http.Request) {
+	itemID := utils.GetQueryInt(r, "item_id", 0)
+	if itemID == 0 {
+		response.Error(w, 400, "1005", "Invalid item ID", map[string]interface{}{
+			"error": "item_id is required",
+		})
+		return
+	}
+
+	statsData, err := h.priceService.GetItemPriceStats(r.Context(), itemID)
+	if err != nil {
+		response.Error(w, 500, "1007", "Failed to get item price stats", map[string]interface{}{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	response.Success(w, statsData)
+}

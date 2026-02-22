@@ -14,4 +14,5 @@ type Repository interface {
 	GetItemSparklineWeekly(ctx context.Context, itemID []int32) ([]GetItemSparklineWeeklyRow, error)
 	GetItemPriceChartByDay(ctx context.Context, params GetItemPriceChartByDayParams) ([]GetItemPriceChartByDayRow, error)
 	GetItemPriceChartByHour(ctx context.Context, params GetItemPriceChartByHourParams) ([]GetItemPriceChartByHourRow, error)
+	GetItemPriceStats(ctx context.Context, itemID int32) (GetItemPriceStatsRow, error)
 }

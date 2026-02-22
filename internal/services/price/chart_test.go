@@ -93,9 +93,10 @@ func TestGetItemPriceChart_7D(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.Equal(t, int32(1100), result[0].Price)
-	// ChangePct not computed in GetItemPriceChartByDay, always 0
+	// baseline row: change_pct always 0
 	assert.Equal(t, float64(0), result[0].ChangePct)
-	assert.Equal(t, float64(0), result[1].ChangePct)
+	// second row: (1050 - 1100) / 1100 * 100 = -4.55
+	assert.Equal(t, float64(-4.55), result[1].ChangePct)
 	mockTimescale.AssertExpectations(t)
 }
 
@@ -114,8 +115,10 @@ func TestGetItemPriceChart_30D(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.Equal(t, int32(1100), result[0].Price)
-	// ChangePct not computed in GetItemPriceChartByDay, always 0
+	// baseline row: change_pct always 0
 	assert.Equal(t, float64(0), result[0].ChangePct)
+	// second row: (1050 - 1100) / 1100 * 100 = -4.55
+	assert.Equal(t, float64(-4.55), result[1].ChangePct)
 	mockTimescale.AssertExpectations(t)
 }
 

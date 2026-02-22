@@ -243,6 +243,48 @@ func (q *Queries) GetItemPriceChartByHour(ctx context.Context, arg GetItemPriceC
 	return items, nil
 }
 
+const getItemPriceStats = `-- name: GetItemPriceStats :one
+SELECT
+    MAX(CASE WHEN bucket >= NOW() - INTERVAL '7 days'   THEN close_price END)::integer AS high_7d,
+    MIN(CASE WHEN bucket >= NOW() - INTERVAL '7 days'   THEN close_price END)::integer AS low_7d,
+    MAX(CASE WHEN bucket >= NOW() - INTERVAL '1 month'  THEN close_price END)::integer AS high_1m,
+    MIN(CASE WHEN bucket >= NOW() - INTERVAL '1 month'  THEN close_price END)::integer AS low_1m,
+    MAX(CASE WHEN bucket >= NOW() - INTERVAL '3 months' THEN close_price END)::integer AS high_3m,
+    MIN(CASE WHEN bucket >= NOW() - INTERVAL '3 months' THEN close_price END)::integer AS low_3m,
+    MAX(CASE WHEN bucket >= NOW() - INTERVAL '6 months' THEN close_price END)::integer AS high_6m,
+    MIN(CASE WHEN bucket >= NOW() - INTERVAL '6 months' THEN close_price END)::integer AS low_6m
+FROM price_changes_24h
+WHERE item_id = $1
+  AND bucket >= NOW() - INTERVAL '6 months'
+`
+
+type GetItemPriceStatsRow struct {
+	High7d int32
+	Low7d  int32
+	High1m int32
+	Low1m  int32
+	High3m int32
+	Low3m  int32
+	High6m int32
+	Low6m  int32
+}
+
+func (q *Queries) GetItemPriceStats(ctx context.Context, itemID int32) (GetItemPriceStatsRow, error) {
+	row := q.db.QueryRow(ctx, getItemPriceStats, itemID)
+	var i GetItemPriceStatsRow
+	err := row.Scan(
+		&i.High7d,
+		&i.Low7d,
+		&i.High1m,
+		&i.Low1m,
+		&i.High3m,
+		&i.Low3m,
+		&i.High6m,
+		&i.Low6m,
+	)
+	return i, err
+}
+
 const getItemSparklineWeekly = `-- name: GetItemSparklineWeekly :many
 SELECT 
     item_id::integer,
