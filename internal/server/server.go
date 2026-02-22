@@ -11,6 +11,7 @@ import (
 	"github.com/bismastr/cs-price-alert/internal/config"
 	"github.com/bismastr/cs-price-alert/internal/db"
 	"github.com/bismastr/cs-price-alert/internal/repository"
+	"github.com/bismastr/cs-price-alert/internal/services/item"
 	"github.com/bismastr/cs-price-alert/internal/services/price"
 	"github.com/bismastr/cs-price-alert/internal/timescale_repository"
 	"github.com/go-chi/chi/v5"
@@ -27,7 +28,9 @@ func NewServer(config *config.Config, db *db.Db) (*Server, error) {
 	postgresRepo := repository.New(db.PostgresPool)
 	priceService := price.NewPriceService(timescaleRepo, postgresRepo)
 	priceHandler := price.NewPriceHandler(priceService)
-	router := NewRouter(priceHandler)
+	itemService := item.NewItemService(timescaleRepo, postgresRepo)
+	itemHandler := item.NewItemHandler(itemService)
+	router := NewRouter(priceHandler, itemHandler)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf(":%s", config.Server.Port),

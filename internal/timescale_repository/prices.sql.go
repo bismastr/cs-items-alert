@@ -139,6 +139,37 @@ func (q *Queries) GetAllPriceChanges(ctx context.Context, arg GetAllPriceChanges
 	return items, nil
 }
 
+const getItemLatestPrice = `-- name: GetItemLatestPrice :one
+SELECT
+    id::integer,
+    sell_price::integer,
+    sell_listings::integer,
+    time::timestamptz
+FROM prices
+WHERE item_id = $1
+ORDER BY time DESC
+LIMIT 1
+`
+
+type GetItemLatestPriceRow struct {
+	ID           int32
+	SellPrice    int32
+	SellListings int32
+	Time         pgtype.Timestamptz
+}
+
+func (q *Queries) GetItemLatestPrice(ctx context.Context, itemID int32) (GetItemLatestPriceRow, error) {
+	row := q.db.QueryRow(ctx, getItemLatestPrice, itemID)
+	var i GetItemLatestPriceRow
+	err := row.Scan(
+		&i.ID,
+		&i.SellPrice,
+		&i.SellListings,
+		&i.Time,
+	)
+	return i, err
+}
+
 const getItemPriceChartByDay = `-- name: GetItemPriceChartByDay :many
 SELECT 
     bucket::timestamptz,

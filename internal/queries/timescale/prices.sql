@@ -133,3 +133,14 @@ SELECT
 FROM price_changes_24h
 WHERE item_id = $1
   AND bucket >= NOW() - INTERVAL '6 months';
+
+-- name: GetItemLatestPrice :one
+SELECT
+    id::integer,
+    sell_price::integer,
+    sell_listings::integer,
+    time::timestamptz
+FROM prices
+WHERE item_id = $1
+ORDER BY time DESC
+LIMIT 1;

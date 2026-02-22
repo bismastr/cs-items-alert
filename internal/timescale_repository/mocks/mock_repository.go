@@ -234,6 +234,72 @@ func (_c *MockRepository_GetAllPriceChanges_Call) RunAndReturn(run func(ctx cont
 	return _c
 }
 
+// GetItemLatestPrice provides a mock function for the type MockRepository
+func (_mock *MockRepository) GetItemLatestPrice(ctx context.Context, itemId int32) (timescale_repository.GetItemLatestPriceRow, error) {
+	ret := _mock.Called(ctx, itemId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetItemLatestPrice")
+	}
+
+	var r0 timescale_repository.GetItemLatestPriceRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int32) (timescale_repository.GetItemLatestPriceRow, error)); ok {
+		return returnFunc(ctx, itemId)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int32) timescale_repository.GetItemLatestPriceRow); ok {
+		r0 = returnFunc(ctx, itemId)
+	} else {
+		r0 = ret.Get(0).(timescale_repository.GetItemLatestPriceRow)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int32) error); ok {
+		r1 = returnFunc(ctx, itemId)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_GetItemLatestPrice_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetItemLatestPrice'
+type MockRepository_GetItemLatestPrice_Call struct {
+	*mock.Call
+}
+
+// GetItemLatestPrice is a helper method to define mock.On call
+//   - ctx context.Context
+//   - itemId int32
+func (_e *MockRepository_Expecter) GetItemLatestPrice(ctx interface{}, itemId interface{}) *MockRepository_GetItemLatestPrice_Call {
+	return &MockRepository_GetItemLatestPrice_Call{Call: _e.mock.On("GetItemLatestPrice", ctx, itemId)}
+}
+
+func (_c *MockRepository_GetItemLatestPrice_Call) Run(run func(ctx context.Context, itemId int32)) *MockRepository_GetItemLatestPrice_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int32
+		if args[1] != nil {
+			arg1 = args[1].(int32)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_GetItemLatestPrice_Call) Return(getItemLatestPriceRow timescale_repository.GetItemLatestPriceRow, err error) *MockRepository_GetItemLatestPrice_Call {
+	_c.Call.Return(getItemLatestPriceRow, err)
+	return _c
+}
+
+func (_c *MockRepository_GetItemLatestPrice_Call) RunAndReturn(run func(ctx context.Context, itemId int32) (timescale_repository.GetItemLatestPriceRow, error)) *MockRepository_GetItemLatestPrice_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetItemPriceChartByDay provides a mock function for the type MockRepository
 func (_mock *MockRepository) GetItemPriceChartByDay(ctx context.Context, params timescale_repository.GetItemPriceChartByDayParams) ([]timescale_repository.GetItemPriceChartByDayRow, error) {
 	ret := _mock.Called(ctx, params)

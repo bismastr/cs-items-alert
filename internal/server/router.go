@@ -4,12 +4,13 @@ import (
 	"net/http"
 
 	"github.com/bismastr/cs-price-alert/internal/response"
+	"github.com/bismastr/cs-price-alert/internal/services/item"
 	"github.com/bismastr/cs-price-alert/internal/services/price"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 )
 
-func NewRouter(priceHandler *price.PriceHandler) *chi.Mux {
+func NewRouter(priceHandler *price.PriceHandler, itemHandler *item.ItemHandler) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
@@ -37,6 +38,7 @@ func NewRouter(priceHandler *price.PriceHandler) *chi.Mux {
 		r.Get("/price-changes/search", priceHandler.GetSearchPriceChanges)
 		r.Get("/price-changes/chart", priceHandler.GetItemPriceChart)
 		r.Get("/price-changes/price-stats", priceHandler.GetItemPriceStats)
+		r.Get("/items/details/{item_id}", itemHandler.GetItemDetails)
 	})
 
 	return r
