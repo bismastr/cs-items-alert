@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/bismastr/cs-price-alert/internal/timescale_repository"
@@ -80,12 +81,36 @@ func (s *PriceService) GetItemPriceChartByHour(ctx context.Context, itemId int32
 }
 
 func (s *PriceService) GetItemPriceChartByDay(ctx context.Context, itemId int32, interval string) ([]PriceChartResult, error) {
-	rows, err := s.timescaleRepo.GetItemPriceChartByDay(ctx, timescale_repository.GetItemPriceChartByDayParams{
-		ItemID:   itemId,
-		Interval: interval,
-	})
-	if err != nil {
-		return nil, err
+	var (
+		rows        []timescale_repository.GetItemPriceChartByDayRow
+		latestPrice timescale_repository.GetItemLatestPriceRow
+		rowsErr     error
+		latestErr   error
+		wg          sync.WaitGroup
+	)
+
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		rows, rowsErr = s.timescaleRepo.GetItemPriceChartByDay(ctx, timescale_repository.GetItemPriceChartByDayParams{
+			ItemID:   itemId,
+			Interval: interval,
+		})
+	}()
+
+	go func() {
+		defer wg.Done()
+		latestPrice, latestErr = s.timescaleRepo.GetItemLatestPrice(ctx, itemId)
+	}()
+
+	wg.Wait()
+
+	if rowsErr != nil {
+		return nil, rowsErr
+	}
+	if latestErr != nil {
+		return nil, latestErr
 	}
 
 	if len(rows) == 0 {
@@ -93,17 +118,30 @@ func (s *PriceService) GetItemPriceChartByDay(ctx context.Context, itemId int32,
 	}
 
 	baselinePrice := rows[0].ClosePrice
+	results := make([]PriceChartResult, 0, len(rows)+1)
 
-	results := make([]PriceChartResult, len(rows))
-	for i, row := range rows {
-		changePct := float64(row.ClosePrice-baselinePrice) / float64(baselinePrice) * 100
-		changePct = math.Round(changePct*100) / 100
-
-		results[i] = PriceChartResult{
+	for _, row := range rows {
+		var changePct float64
+		if baselinePrice != 0 {
+			changePct = float64(row.ClosePrice-baselinePrice) / float64(baselinePrice) * 100
+			changePct = math.Round(changePct*100) / 100
+		}
+		results = append(results, PriceChartResult{
 			Timestamp: row.Bucket.Time,
 			Price:     row.ClosePrice,
 			ChangePct: changePct,
-		}
+		})
 	}
+
+	var latestChangePct float64
+	if baselinePrice != 0 {
+		latestChangePct = math.Round(float64(latestPrice.SellPrice-baselinePrice)/float64(baselinePrice)*100*100) / 100
+	}
+	results = append(results, PriceChartResult{
+		Timestamp: latestPrice.Time.Time,
+		Price:     latestPrice.SellPrice,
+		ChangePct: latestChangePct,
+	})
+
 	return results, nil
 }
